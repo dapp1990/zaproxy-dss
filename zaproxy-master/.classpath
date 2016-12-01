@@ -49,6 +49,7 @@
 	<classpathentry kind="lib" path="lib/commons-codec-1.9.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/httpcore-4.4.1.jar"/>
-	<classpathentry kind="lib" path="/Users/Daniel/GitHub/DSS-project/zaproxy-master/gif4j_pro_trial_2.3.jar"/>
+	<classpathentry kind="lib" path="/home/r0301713/Downloads/gif4j_pro_2.3_trial.zip"/>
+	<classpathentry kind="lib" path="/home/r0301713/Documents/gif4j_pro_trial_2.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

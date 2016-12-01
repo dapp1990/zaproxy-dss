@@ -90,6 +90,11 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.db.RecordHistory;
+import org.parosproxy.paros.extension.filter.EnhanceFilter;
+import org.parosproxy.paros.extension.filter.FlippingFilter;
+import org.parosproxy.paros.extension.filter.ImageProcessor;
+import org.parosproxy.paros.extension.filter.SimpleImageFilter;
+import org.parosproxy.paros.extension.filter.WatermarkFilter;
 import org.parosproxy.paros.model.Model;
 import org.parosproxy.paros.network.ConnectionParam;
 import org.parosproxy.paros.network.HttpHeader;
@@ -340,12 +345,14 @@ class ProxyThread implements Runnable {
             	BufferedReader textReader = new BufferedReader(fr);
             	            	
             	while(textReader.ready()){
+            		SimpleImageFilter filter;
             		switch (textReader.readLine()){
-            		case "watermark": imageInBuffer = ImageProcessor.applyWatermark(imageInBuffer); break;
-            		case "enhance": imageInBuffer = ImageProcessor.enhanceImage(extension, imageInBuffer); break;
-            		case "flip": imageInBuffer = ImageProcessor.flipImage(imageInBuffer); break;
+            		case "watermark": filter = new WatermarkFilter();break;//ImageProcessor.applyWatermark(imageInBuffer); break;
+            		case "enhance": filter = new EnhanceFilter();; break;
+            		case "flip": filter = new FlippingFilter();; break;
             		default: throw new IllegalArgumentException();
             		}
+            		imageInBuffer = filter.applyFilter(imageInBuffer);
             	}
             	textReader.close();
             	
