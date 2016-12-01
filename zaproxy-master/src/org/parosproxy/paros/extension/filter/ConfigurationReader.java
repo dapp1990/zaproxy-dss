@@ -8,61 +8,59 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
-public class ConfigurationReader {
-//	private static final String CONFIG_FILE = "resources/config.txt";
-//	private FileReader fileReader;
-//	private Class[] types;
+public class ConfigurationReader<T> {
+	//	private static final String CONFIG_FILE = "resources/config.txt";
+	//	private FileReader fileReader;
+	//	private Class[] types;
 	private String fileLocation;
-	private ArrayList<Object> instances;
-	private String[] classNames;
-	
-	public ConfigurationReader (String fileLocation, String[] classNames) {
+	private ArrayList<T> instances;
+	//	private String[] classNames;
+	private String path;
+
+	public ConfigurationReader (String fileLocation, String packagePath) {
 		this.fileLocation = fileLocation;
-//		this.types = types;
-		this.classNames = classNames;
-		instances = new ArrayList<Object>();
+		//		this.types = types;
+		//		this.classNames = classNames;
+		instances = new ArrayList<T>();
+		this.path = packagePath;
 	}
-	
-	public void execute() throws IOException {
+
+	private void execute() throws IOException {
 		FileReader fr = new FileReader(fileLocation);
-    	BufferedReader textReader = new BufferedReader(fr);
-    	            	
-    	while(textReader.ready()){
-    		String nextString = textReader.readLine();
-    		for(String name : classNames) {
-    			if(name.equals(nextString)) {
-//    				instances.add(createI)
-    				try {
-						Class<?> clazz = Class.forName(name);
-						Constructor<?> ctor = clazz.getConstructor(String.class);
-						instances.add(ctor.newInstance(new Object[] {  }));	//static, no arguments for constructors
-					} catch (ClassNotFoundException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (NoSuchMethodException nsme) {
-						nsme.printStackTrace();
-					} catch (InvocationTargetException ite) {
-						
-					} catch (InstantiationException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IllegalAccessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IllegalArgumentException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-    			}
-    		}
-    	}
-    	textReader.close();
+		BufferedReader textReader = new BufferedReader(fr);
+
+		while(textReader.ready()){
+			String nextString = textReader.readLine();
+			try {
+				Class<?> clazz = Class.forName(path+"."+nextString);	//Total programming: instantiation will only work if the typing is correct
+				Constructor<?> ctor = clazz.getConstructor();
+				instances.add((T) ctor.newInstance(new Object[] {  }));	//static, no arguments for constructors
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (NoSuchMethodException nsme) {
+				nsme.printStackTrace();
+			} catch (InvocationTargetException ite) {
+
+			} catch (InstantiationException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			}
+		}
+		textReader.close();
 	}
-	
-	public ArrayList<Object> getInstances() {
+
+	public ArrayList<T> getInstances() {
+		try {
+			execute();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return this.instances;
 	}
-	
+
 	/*public Initialized {
 		FileReader fileReader = new FileReader(CONFIG_FILE);
 	}*/

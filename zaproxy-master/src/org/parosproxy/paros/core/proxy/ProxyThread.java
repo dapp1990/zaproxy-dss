@@ -333,39 +333,7 @@ class ProxyThread implements Runnable {
 
         if (msg.getResponseBody().length() > 0) {
         	
-            if (msg.getResponseHeader().getHeader("Content-Type").startsWith("image/")){
-            	String extension = msg.getResponseHeader().getHeader("Content-Type").substring(msg.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
-            	
-            	//convert byte[] to BufferedImage
-            	byte imageReference[] = msg.getResponseBody().getBytes().clone();
-            	ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
-            	BufferedImage imageInBuffer = ImageIO.read(imageValue);
-            	
-            	FileReader fr = new FileReader("resources/config.txt");
-            	BufferedReader textReader = new BufferedReader(fr);
-            	            	
-            	while(textReader.ready()){
-            		SimpleImageFilter filter;
-            		switch (textReader.readLine()){
-            		case "watermark": filter = new WatermarkFilter();break;//ImageProcessor.applyWatermark(imageInBuffer); break;
-            		case "enhance": filter = new EnhanceFilter();; break;
-            		case "flip": filter = new FlippingFilter();; break;
-            		default: throw new IllegalArgumentException();
-            		}
-            		imageInBuffer = filter.applyFilter(imageInBuffer);
-            	}
-            	textReader.close();
-            	
-            	//convert BufferedImage to byte[]
-            	ByteArrayOutputStream ouput = new ByteArrayOutputStream();
-            	ImageIO.write(imageInBuffer, extension, ouput );
-            	ouput.flush();
-            	byte[] imageInByte = ouput.toByteArray();
-            	ouput.close();
-            		
-            	//set the flipped image to the body
-            	msg.setResponseBody(imageInByte);
-        	}
+            
 
             outputStream.write(msg.getResponseBody().getBytes());
             outputStream.flush();
