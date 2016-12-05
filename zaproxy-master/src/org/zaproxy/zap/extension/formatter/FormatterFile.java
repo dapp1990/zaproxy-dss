@@ -1,6 +1,6 @@
 // TODO The solution should include a well-designed parser for this format.
-// 	- TODO The parser should ignore malformed lines.
-//  - TODO The parser should ignore blank lines.
+// TODO The parser should ignore malformed lines.
+// TODO The parser should ignore blank lines.
 
 package org.zaproxy.zap.extension.formatter;
 
