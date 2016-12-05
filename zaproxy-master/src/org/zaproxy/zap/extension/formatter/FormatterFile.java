@@ -19,8 +19,7 @@ public class FormatterFile extends FormatterAbstractReplace<String, ArrayList<Tr
 		ArrayList<Triplet<String,String,String>> array = new ArrayList<Triplet<String,String,String>>();
 		// Assuming that the threshold is always the first element and there is no errors in the format..
 		try {
-			FileReader fr;
-			fr = new FileReader(src);
+			FileReader fr = new FileReader(src);
 			BufferedReader textReader = new BufferedReader(fr);
 			while(textReader.ready()){
 				String line = textReader.readLine();
