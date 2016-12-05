@@ -50,5 +50,6 @@
 	<classpathentry kind="lib" path="lib/commons-logging-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/httpcore-4.4.1.jar"/>
 	<classpathentry kind="lib" path="lib/gif4j_pro_trial_2.3.jar"/>
+	<classpathentry kind="lib" path="lib/javatuples-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
