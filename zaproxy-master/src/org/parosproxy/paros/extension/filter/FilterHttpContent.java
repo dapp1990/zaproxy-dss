@@ -1,7 +1,7 @@
 package org.parosproxy.paros.extension.filter;
 
 import org.parosproxy.paros.Constant;
-import org.parosproxy.paros.extension.filter.classifier.ClassifierHttpNaive;
+import org.parosproxy.paros.extension.filter.classifier.FilterApplyer;
 import org.parosproxy.paros.network.HttpMessage;
 
 public class FilterHttpContent extends FilterAdaptor {
@@ -26,7 +26,7 @@ public class FilterHttpContent extends FilterAdaptor {
 	@Override
 	public void onHttpResponseReceive(HttpMessage httpMessage) {
 		
-		String inappropriateTags = (new ClassifierHttpNaive()).getClassification(httpMessage);
+		String inappropriateTags = (new FilterApplyer()).getClassification(httpMessage);
 		
 		if (! inappropriateTags.isEmpty()) {
 			httpMessage.setResponseBody("PAGE WAS BLOCKED - The content of this page is " + inappropriateTags);

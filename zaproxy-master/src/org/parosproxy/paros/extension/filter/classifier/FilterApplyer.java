@@ -15,38 +15,53 @@ import org.javatuples.Triplet;
 import org.parosproxy.paros.extension.filter.formatter.InappropriateElement;
 import org.parosproxy.paros.extension.filter.formatter.FormatFileToFilterInfo;
 import org.parosproxy.paros.network.HttpMessage;
+import org.parosproxy.paros.network.HttpResponseHeader;
+import org.zaproxy.zap.network.HttpResponseBody;
 
-public class ClassifierHttpNaive extends
+import javafx.util.Pair;
+
+public class FilterApplyer extends
 		ClassifierAbstract<HttpMessage, String> {
 
 	@Override
 	public String getClassification(HttpMessage msg) {
 		
 		String result = "";
-		int counter = 0;
+		int totalWeight = 0;
 		
 		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo("resources/contentFormat.txt");
+		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFormat();
 		
-		ArrayList<InappropriateElement<String>> inappropriate_tags = filterInfoParser.getFormat().getValue();
+		ArrayList<InappropriateElement<String>> inappropriate_tags = parsedFormatFile.getValue();
+		
+		HttpResponseHeader header = msg.getResponseHeader();
+		HttpResponseBody body = msg.getResponseBody();
+		
+		if (header.isEmpty()) {
+			return result;
+		}
 		
 		if (msg.getResponseHeader().isImage()) {
 			return result;
 		}
 		
-//		if (!msg.getResponseHeader().isEmpty() && msg.getResponseBody().length() > 0){
-//			String BodyAsString = msg.getResponseBody().toString();
-//			for (InappropriateElement<String> inapEl : inappropriate_tags) {
-//				if(BodyAsString.contains(tag.getValue0()) && ! tag.getValue0().equalsIgnoreCase("threshold")){
-//					counter += Integer.parseInt(tag.getValue1());
-//					result += tag.getValue2();
-//				}
-//			}
-//		}
+		if (body.length() > 0){
+			String BodyAsString = body.toString();
+			for (InappropriateElement<String> inapElement : inappropriate_tags) {
+				if(BodyAsString.contains(inapElement.getInappropriateContent())){
+					totalWeight += inapElement.getWeight();
+					result += inapElement.getInappropriateContent();
+					for(String tag : inapElement.getTags()) {
+						result = result + " " + tag;
+					}
+				}
+			}
+		}
 		
-		// Inclusive threshold
-//		if(counter <= Integer.parseInt(inappropriate_tags.get(0).getValue1())){
-//			result = "";
-//		}
+		// Checking threshold
+		if(totalWeight <= parsedFormatFile.getKey()){
+			result = "";
+		}
 		
 		return result;
 
