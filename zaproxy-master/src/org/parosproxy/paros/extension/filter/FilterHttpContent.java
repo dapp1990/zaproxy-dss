@@ -1,8 +1,8 @@
 package org.parosproxy.paros.extension.filter;
 
 import org.parosproxy.paros.Constant;
+import org.parosproxy.paros.extension.filter.classifier.ClassifierHttpNaive;
 import org.parosproxy.paros.network.HttpMessage;
-import org.zaproxy.zap.extension.classifier.ClassifierHttpNaive;
 
 public class FilterHttpContent extends FilterAdaptor {
 
