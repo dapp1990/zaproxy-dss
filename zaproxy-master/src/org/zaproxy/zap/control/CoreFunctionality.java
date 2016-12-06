@@ -101,6 +101,7 @@ public final class CoreFunctionality {
 			extensions.add(new org.zaproxy.zap.extension.log4j.ExtensionLog4j());
 			extensions.add(new org.zaproxy.zap.extension.params.ExtensionParams());
 			extensions.add(new org.zaproxy.zap.extension.pscan.ExtensionPassiveScan());
+			extensions.add(new org.zaproxy.zap.extension.imgreport.ExtensionImageReport()); // TODO Convert this to an add on, instead of a "core" functionality
 			extensions.add(new org.zaproxy.zap.extension.script.ExtensionScript());
 			extensions.add(new org.zaproxy.zap.extension.search.ExtensionSearch());
 			extensions.add(new org.zaproxy.zap.extension.sessions.ExtensionSessionManagement());

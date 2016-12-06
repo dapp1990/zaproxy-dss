@@ -45,8 +45,8 @@ public class ExtensionReport extends ExtensionAdaptor implements CommandLineList
 
     private static final int ARG_LAST_SCAN_REPORT_IDX = 0;
 
-	private ZapMenuItem menuItemHtmlReport = null;
 	private ZapMenuItem menuItemXmlReport = null;
+	private ZapMenuItem menuItemImagesHtmlReport = null;
 	private CommandLineArgument[] arguments = new CommandLineArgument[1];
 
     /**
@@ -77,19 +77,17 @@ public class ExtensionReport extends ExtensionAdaptor implements CommandLineList
 	public void hook(ExtensionHook extensionHook) {
 	    super.hook(extensionHook);
 	    if (getView() != null) {
-	        //extensionHook.getHookMenu().addNewMenu(getMenuReport());
 	        extensionHook.getHookMenu().addReportMenuItem(getMenuItemHtmlReport());
 	        extensionHook.getHookMenu().addReportMenuItem(getMenuItemXmlReport());
-
 	    }
         extensionHook.addCommandLine(getCommandLineArguments());
 
 	}
-
+	
 	private ZapMenuItem getMenuItemHtmlReport() {
-		if (menuItemHtmlReport == null) {
-			menuItemHtmlReport = new ZapMenuItem("menu.report.html.generate");
-			menuItemHtmlReport.addActionListener(new java.awt.event.ActionListener() { 
+		if (menuItemImagesHtmlReport == null) {
+			menuItemImagesHtmlReport = new ZapMenuItem("menu.report.html.generate");
+			menuItemImagesHtmlReport.addActionListener(new java.awt.event.ActionListener() { 
 
 				@Override
 				public void actionPerformed(java.awt.event.ActionEvent e) {    
@@ -101,7 +99,7 @@ public class ExtensionReport extends ExtensionAdaptor implements CommandLineList
 			});
 
 		}
-		return menuItemHtmlReport;
+		return menuItemImagesHtmlReport;
 	}
 	
 	private ZapMenuItem getMenuItemXmlReport() {
