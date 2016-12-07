@@ -1,6 +1,7 @@
 // TODO Implements image type statistics
 // TODO Implements image width statistics
 // TODO Implements image height statistics
+// TODO Modify report.html.xsl file to get the information in HTML reports (you can find the file in zaproxy-dss/zaproxy-master/src/xml)
 // TODO Generalize methods/classes if it is possible
 // TODO Split responsibilities if it is possible
 
