@@ -1,7 +1,3 @@
-// TODO twice the xml format
-// TODO get the correct url
-// TODO avg and med are the same (it's very unlikely this)
-
 package org.zaproxy.zap.extension.imgreport;
 
 public class ImageProperties {

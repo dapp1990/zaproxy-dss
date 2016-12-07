@@ -1,3 +1,9 @@
+// TODO Implements image type statistics
+// TODO Implements image width statistics
+// TODO Implements image height statistics
+// TODO Generalize methods/classes if it is possible
+// TODO Split responsibilities if it is possible
+
 package org.zaproxy.zap.extension.imgreport;
 
 import java.awt.image.BufferedImage;
@@ -7,15 +13,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
-import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
-import org.parosproxy.paros.extension.report.ReportGenerator;
 import org.parosproxy.paros.model.SiteNode;
 import org.parosproxy.paros.network.HttpMessage;
 import org.parosproxy.paros.network.HttpSender;
@@ -45,10 +48,8 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
         
         // Register as Http Sender listener in order to catch the received messages 
      	HttpSender.addListener(this);
+     	
      	imagePropertiesList = new ArrayList<ImageProperties>();
-    	//private Map<String, Integer> imageFileSizeStatistics;
-    	//private Map<String, Integer> imageWidthStatistics;
-    	//private Map<String, Integer> imageHeightStatistics;
     }
 
     @Override
@@ -81,31 +82,61 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	
 	@Override
 	public String getXml(SiteNode site) {
-		StringBuilder result = new StringBuilder();
+	
+		List<ImageProperties> siteImages = imagePropertiesList;
+
+		// Filter out images from other sites
+		siteImages.removeIf(s -> !s.getUrl().startsWith(site.getNodeName()));
 		
-		if (!imagePropertiesList.isEmpty()){
-		int medIndex = imagePropertiesList.size()/2;
+		StringBuilder xml = new StringBuilder();
 		
-		//int avgFile = getAvgImageSize();
+		// If there is not images in the site, <ImageStatistics> tag is empty
 		
-		sortByFileSize(imagePropertiesList);
-		
-		result.append("<FileSize>");
-	    result.append("<min val=\"").append(imagePropertiesList.get((imagePropertiesList.size()-1)).getImageSize());
-	    result.append("\" minurl=\"").append(imagePropertiesList.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
-	    
-	    result.append("<max val=\"").append(imagePropertiesList.get(0).getImageSize());
-	    result.append("\" maxurl=\"").append(imagePropertiesList.get(0).getUrl()).append("\">\r\n");
-	    
-	    result.append("<med val=\"").append(imagePropertiesList.get(medIndex).getImageSize()).append("\">\r\n");
-	    
-	    result.append("<avg val=\"").append(imagePropertiesList.get(medIndex).getImageSize()).append("\">\r\n");
-	    
-	    result.append("</FileSize>");
-	    
+		xml.append("\r\n<imagestatistics>\r\n");
+		if (!siteImages.isEmpty()){
+			xml.append(getFileSizeStatistics(siteImages));
+			//Append other statistics
 		}
 		
-		return result.toString();
+		xml.append("</imagestatistics>\r\n");
+		
+		return xml.toString();
+	}
+
+	private String getFileSizeStatistics(List<ImageProperties> siteImages) {
+		
+		sortByFileSize(siteImages);
+		
+		StringBuilder xml = new StringBuilder();
+		
+		int medIndex = siteImages.size()/2;
+		double avgFile = getAvgImageSize(siteImages);
+		
+		xml.append("  <filesize>\r\n");
+		
+		xml.append("    <min val=\"").append(siteImages.get((imagePropertiesList.size()-1)).getImageSize());
+		xml.append("\" minurl=\"").append(siteImages.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
+		
+		xml.append("    <max val=\"").append(siteImages.get(0).getImageSize());
+		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
+		
+		xml.append("    <med val=\"").append(siteImages.get(medIndex).getImageSize()).append("\">\r\n");
+		
+		xml.append("    <avg val=\"").append(avgFile).append("\">\r\n");
+		
+		xml.append("  </filesize>\r\n");
+		
+		return xml.toString();
+	}
+
+	private double getAvgImageSize(List<ImageProperties> siteImages) {
+		int counter = 0;
+		
+		for(ImageProperties img: siteImages){
+			counter += img.getImageSize();
+		}
+		
+		return counter/siteImages.size();
 	}
 
 	private void sortByFileSize(List<ImageProperties> imagePropertiesList) {
@@ -114,11 +145,6 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
                 return o1.getImageSize() > o2.getImageSize() ? -1 : o1.getImageSize() == o2.getImageSize() ? 0 : 1;
             }
         });
-	}
-
-	private int getAvgImageSize() {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	@Override
@@ -140,7 +166,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 			
 			String extension = msg.getResponseHeader().getHeader("Content-Type").substring(msg.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
 			
-			String url = msg.getResponseHeader().getHeader("From");
+			String url = msg.getRequestHeader().getHeader("Referer");
 					
 			byte imageReference[] = msg.getResponseBody().getBytes().clone();
 			ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
@@ -150,11 +176,10 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 				imageInBuffer = ImageIO.read(imageValue);
 				
 				ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-				ImageIO.write(imageInBuffer, "png", tmp);	//probably inaccurate with hardcoded extension
+				ImageIO.write(imageInBuffer, extension, tmp);
 				tmp.close();
 				Integer imageSize = tmp.size();
 				
-				System.out.println("ExtensionImageReport -> Process images here");
 				this.storeImage(new ImageProperties(imageInBuffer.getHeight(), imageInBuffer.getWidth(), imageSize, extension, url));
 				
 			} catch (IOException e) {
