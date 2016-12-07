@@ -14,7 +14,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -96,12 +98,124 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		xml.append("\r\n<imagestatistics>\r\n");
 		if (!siteImages.isEmpty()){
 			xml.append(getFileSizeStatistics(siteImages));
-			//Append other statistics
+			xml.append(getFileWidthStatistics(siteImages));
+			xml.append(getFileHeightStatistics(siteImages));
+			xml.append(getFileTypeStatistics(siteImages));
 		}
 		
 		xml.append("</imagestatistics>\r\n");
 		
 		return xml.toString();
+	}
+
+	private String getFileTypeStatistics(List<ImageProperties> siteImages) {
+		HashMap<String,Integer> fileTypes = new HashMap<String, Integer>();
+		
+		for (ImageProperties imgProperties : siteImages){
+			if (fileTypes.containsKey(imgProperties.getExtension())){
+				fileTypes.put(imgProperties.getExtension(), fileTypes.get(imgProperties.getExtension())+1);
+			} else {
+				fileTypes.put(imgProperties.getExtension(), 1);
+			}
+		}
+		
+		double totalAmountImages = siteImages.size();
+		StringBuilder xml = new StringBuilder();
+		xml.append("  <fileTypes>\r\n");
+		
+		for (Map.Entry<String, Integer> entry : fileTypes.entrySet())
+		{
+			xml.append("    <"+entry.getKey()+"=\"").append(100*entry.getValue()/totalAmountImages).append("\">\r\n");;
+		}
+		
+		xml.append("  </fileTypes>\r\n");
+		return xml.toString();
+	}
+
+	private String getFileHeightStatistics(List<ImageProperties> siteImages) {
+		sortByFileHeight(siteImages);
+		
+		StringBuilder xml = new StringBuilder();
+		
+		int medIndex = siteImages.size()/2;
+		double avgFileHeight = getAvgImageHeight(siteImages);
+		
+		xml.append("  <fileHeight>\r\n");
+		
+		xml.append("    <min val=\"").append(siteImages.get((imagePropertiesList.size()-1)).getHeight());
+		xml.append("\" minurl=\"").append(siteImages.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
+		
+		xml.append("    <max val=\"").append(siteImages.get(0).getHeight());
+		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
+		
+		xml.append("    <med val=\"").append(siteImages.get(medIndex).getHeight()).append("\">\r\n");
+		
+		xml.append("    <avg val=\"").append(avgFileHeight).append("\">\r\n");
+		
+		xml.append("  </fileHeight>\r\n");
+		
+		return xml.toString();
+	}
+
+	private double getAvgImageHeight(List<ImageProperties> siteImages) {
+		int counter = 0;
+		
+		for(ImageProperties img: siteImages){
+			counter += img.getHeight();
+		}
+		
+		return counter/siteImages.size();
+	}
+
+	private void sortByFileHeight(List<ImageProperties> siteImages) {
+		Collections.sort(imagePropertiesList, new Comparator<ImageProperties>() {
+            public int compare(ImageProperties o1, ImageProperties o2) {
+                return o1.getHeight() > o2.getHeight() ? -1 : o1.getHeight() == o2.getHeight() ? 0 : 1;
+            }
+        });
+	}
+
+	private String getFileWidthStatistics(List<ImageProperties> siteImages) {
+		sortByFileWidth(siteImages);
+		
+		StringBuilder xml = new StringBuilder();
+		
+		int medIndex = siteImages.size()/2;
+		double avgFileWidth = getAvgImageWidth(siteImages);
+		
+		xml.append("  <fileWidth>\r\n");
+		
+		xml.append("    <min val=\"").append(siteImages.get((imagePropertiesList.size()-1)).getWidth());
+		xml.append("\" minurl=\"").append(siteImages.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
+		
+		xml.append("    <max val=\"").append(siteImages.get(0).getWidth());
+		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
+		
+		xml.append("    <med val=\"").append(siteImages.get(medIndex).getWidth()).append("\">\r\n");
+		
+		xml.append("    <avg val=\"").append(avgFileWidth).append("\">\r\n");
+		
+		xml.append("  </fileWidth>\r\n");
+		
+		return xml.toString();
+	}
+
+	private double getAvgImageWidth(List<ImageProperties> siteImages) {
+		int counter = 0;
+		
+		for(ImageProperties img: siteImages){
+			counter += img.getWidth();
+		}
+		
+		return counter/siteImages.size();
+	}
+
+	private void sortByFileWidth(List<ImageProperties> siteImages) {
+		Collections.sort(imagePropertiesList, new Comparator<ImageProperties>() {
+            public int compare(ImageProperties o1, ImageProperties o2) {
+                return o1.getWidth() > o2.getWidth() ? -1 : o1.getWidth() == o2.getWidth() ? 0 : 1;
+            }
+        });
 	}
 
 	private String getFileSizeStatistics(List<ImageProperties> siteImages) {
@@ -111,7 +225,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		StringBuilder xml = new StringBuilder();
 		
 		int medIndex = siteImages.size()/2;
-		double avgFile = getAvgImageSize(siteImages);
+		double avgFileSize = getAvgImageSize(siteImages);
 		
 		xml.append("  <filesize>\r\n");
 		
@@ -123,7 +237,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("    <med val=\"").append(siteImages.get(medIndex).getImageSize()).append("\">\r\n");
 		
-		xml.append("    <avg val=\"").append(avgFile).append("\">\r\n");
+		xml.append("    <avg val=\"").append(avgFileSize).append("\">\r\n");
 		
 		xml.append("  </filesize>\r\n");
 		
