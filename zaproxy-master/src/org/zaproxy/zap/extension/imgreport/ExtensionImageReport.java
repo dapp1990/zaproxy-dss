@@ -185,7 +185,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getWidth()).append("</min>\r\n");
 		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
 		
-		xml.append("    <max>").append(siteImages.get(0).getUrl()).append("</max>\r\n");
+		xml.append("    <max>").append(siteImages.get(0).getWidth()).append("</max>\r\n");
 		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
 		
 		xml.append("	<med>").append(siteImages.get(medIndex).getWidth()).append("</med>\r\n");
