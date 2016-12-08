@@ -90,17 +90,17 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		StringBuilder xml = new StringBuilder();
 		
-		// If there is not images in the site, <ImageStatistics> tag is empty
+		// If there is not images in the site, <ImageStatistics> tag is not shown
 		
-		xml.append("\r\n<imagestatistics>\r\n");
 		if (!siteImages.isEmpty()){
+			xml.append("\r\n<imagestatistics>\r\n");
+			xml.append("\r\n<site>").append(site.getNodeName()).append("</site>\r\n");
 			xml.append(getFileSizeStatistics(siteImages));
 			xml.append(getFileWidthStatistics(siteImages));
 			xml.append(getFileHeightStatistics(siteImages));
 			xml.append(getFileTypeStatistics(siteImages));
+			xml.append("</imagestatistics>\r\n");
 		}
-		
-		xml.append("</imagestatistics>\r\n");
 		
 		return xml.toString();
 	}
@@ -137,7 +137,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		int medIndex = siteImages.size()/2;
 		double avgFileHeight = getAvgImageHeight(siteImages);
 		
-		xml.append("  <fileHeight>\r\n");
+		xml.append("  <fileheight>\r\n");
 		
 		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getHeight()).append("</min>\r\n");
 		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
@@ -149,7 +149,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("	<avg>").append(avgFileHeight).append("</avg>\r\n");
 		
-		xml.append("  </fileHeight>\r\n");
+		xml.append("  </fileheight>\r\n");
 		
 		return xml.toString();
 	}
@@ -180,7 +180,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		int medIndex = siteImages.size()/2;
 		double avgFileWidth = getAvgImageWidth(siteImages);
 		
-		xml.append("  <fileWidth>\r\n");
+		xml.append("  <filewidth>\r\n");
 		
 		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getWidth()).append("</min>\r\n");
 		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
@@ -192,7 +192,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("	<avg>").append(avgFileWidth).append("</avg>\r\n");
 		
-		xml.append("  </fileWidth>\r\n");
+		xml.append("  </filewidth>\r\n");
 		
 		return xml.toString();
 	}
