@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.httpclient.URI;
 import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
 import org.parosproxy.paros.model.SiteNode;
@@ -32,7 +33,7 @@ import org.zaproxy.zap.network.HttpSenderListener;
 public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporterExtension, HttpSenderListener {
 	
 	private static final String NAME = "ExtensionImageReport";
-	private List<ImageProperties> imagePropertiesList;
+	private List<HttpImage> httpImageList;
 	
 	//private ResourceBundle messages = null;
 
@@ -52,7 +53,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
         // Register as Http Sender listener in order to catch the received messages 
      	HttpSender.addListener(this);
      	
-     	imagePropertiesList = new ArrayList<ImageProperties>();
+     	httpImageList = new ArrayList<HttpImage>();
     }
 
     @Override
@@ -86,10 +87,10 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	@Override
 	public String getXml(SiteNode site) {
 	
-		List<ImageProperties> siteImages = imagePropertiesList;
-
+		ArrayList<HttpImage> siteImages = new ArrayList<HttpImage>(httpImageList);
+		
 		// Filter out images from other sites
-		siteImages.removeIf(s -> !s.getUrl().startsWith(site.getNodeName()));
+		siteImages.removeIf(httpImg -> !httpImg.getUrl().startsWith(site.getNodeName()));
 		
 		StringBuilder xml = new StringBuilder();
 		
@@ -108,10 +109,10 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		return xml.toString();
 	}
 
-	private String getFileTypeStatistics(List<ImageProperties> siteImages) {
+	private String getFileTypeStatistics(List<HttpImage> siteImages) {
 		HashMap<String,Integer> fileTypes = new HashMap<String, Integer>();
 		
-		for (ImageProperties imgProperties : siteImages){
+		for (HttpImage imgProperties : siteImages){
 			if (fileTypes.containsKey(imgProperties.getExtension())){
 				fileTypes.put(imgProperties.getExtension(), fileTypes.get(imgProperties.getExtension())+1);
 			} else {
@@ -132,7 +133,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		return xml.toString();
 	}
 
-	private String getFileHeightStatistics(List<ImageProperties> siteImages) {
+	private String getFileHeightStatistics(List<HttpImage> siteImages) {
 		sortByFileHeight(siteImages);
 		
 		StringBuilder xml = new StringBuilder();
@@ -142,8 +143,8 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("  <fileHeight>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((imagePropertiesList.size()-1)).getHeight());
-		xml.append("\" minurl=\"").append(siteImages.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
+		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getHeight());
+		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\">\r\n");
 		
 		xml.append("    <max val=\"").append(siteImages.get(0).getHeight());
 		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
@@ -157,25 +158,25 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		return xml.toString();
 	}
 
-	private double getAvgImageHeight(List<ImageProperties> siteImages) {
+	private double getAvgImageHeight(List<HttpImage> siteImages) {
 		int counter = 0;
 		
-		for(ImageProperties img: siteImages){
+		for(HttpImage img: siteImages){
 			counter += img.getHeight();
 		}
 		
 		return counter/siteImages.size();
 	}
 
-	private void sortByFileHeight(List<ImageProperties> siteImages) {
-		Collections.sort(imagePropertiesList, new Comparator<ImageProperties>() {
-            public int compare(ImageProperties o1, ImageProperties o2) {
+	private void sortByFileHeight(List<HttpImage> siteImages) {
+		Collections.sort(httpImageList, new Comparator<HttpImage>() {
+            public int compare(HttpImage o1, HttpImage o2) {
                 return o1.getHeight() > o2.getHeight() ? -1 : o1.getHeight() == o2.getHeight() ? 0 : 1;
             }
         });
 	}
 
-	private String getFileWidthStatistics(List<ImageProperties> siteImages) {
+	private String getFileWidthStatistics(List<HttpImage> siteImages) {
 		sortByFileWidth(siteImages);
 		
 		StringBuilder xml = new StringBuilder();
@@ -185,8 +186,8 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("  <fileWidth>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((imagePropertiesList.size()-1)).getWidth());
-		xml.append("\" minurl=\"").append(siteImages.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
+		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getWidth());
+		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\">\r\n");
 		
 		xml.append("    <max val=\"").append(siteImages.get(0).getWidth());
 		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
@@ -200,25 +201,25 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		return xml.toString();
 	}
 
-	private double getAvgImageWidth(List<ImageProperties> siteImages) {
+	private double getAvgImageWidth(List<HttpImage> siteImages) {
 		int counter = 0;
 		
-		for(ImageProperties img: siteImages){
+		for(HttpImage img: siteImages){
 			counter += img.getWidth();
 		}
 		
 		return counter/siteImages.size();
 	}
 
-	private void sortByFileWidth(List<ImageProperties> siteImages) {
-		Collections.sort(imagePropertiesList, new Comparator<ImageProperties>() {
-            public int compare(ImageProperties o1, ImageProperties o2) {
+	private void sortByFileWidth(List<HttpImage> siteImages) {
+		Collections.sort(httpImageList, new Comparator<HttpImage>() {
+            public int compare(HttpImage o1, HttpImage o2) {
                 return o1.getWidth() > o2.getWidth() ? -1 : o1.getWidth() == o2.getWidth() ? 0 : 1;
             }
         });
 	}
 
-	private String getFileSizeStatistics(List<ImageProperties> siteImages) {
+	private String getFileSizeStatistics(List<HttpImage> siteImages) {
 		
 		sortByFileSize(siteImages);
 		
@@ -229,8 +230,8 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("  <filesize>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((imagePropertiesList.size()-1)).getImageSize());
-		xml.append("\" minurl=\"").append(siteImages.get((imagePropertiesList.size()-1)).getUrl()).append("\">\r\n");
+		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getImageSize());
+		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\">\r\n");
 		
 		xml.append("    <max val=\"").append(siteImages.get(0).getImageSize());
 		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
@@ -244,19 +245,19 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		return xml.toString();
 	}
 
-	private double getAvgImageSize(List<ImageProperties> siteImages) {
+	private double getAvgImageSize(List<HttpImage> siteImages) {
 		int counter = 0;
 		
-		for(ImageProperties img: siteImages){
+		for(HttpImage img: siteImages){
 			counter += img.getImageSize();
 		}
 		
 		return counter/siteImages.size();
 	}
 
-	private void sortByFileSize(List<ImageProperties> imagePropertiesList) {
-		Collections.sort(imagePropertiesList, new Comparator<ImageProperties>() {
-            public int compare(ImageProperties o1, ImageProperties o2) {
+	private void sortByFileSize(List<HttpImage> imagePropertiesList) {
+		Collections.sort(imagePropertiesList, new Comparator<HttpImage>() {
+            public int compare(HttpImage o1, HttpImage o2) {
                 return o1.getImageSize() > o2.getImageSize() ? -1 : o1.getImageSize() == o2.getImageSize() ? 0 : 1;
             }
         });
@@ -277,35 +278,39 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	@Override
 	public void onHttpResponseReceive(HttpMessage msg, int initiator,
 			HttpSender sender) {
-		if (msg.getRequestHeader().isImage()) {
+		
+		if (msg.getRequestHeader().isImage() && msg.getResponseBody().length() > 0 && !msg.getResponseHeader().isEmpty()) {
 			
 			String extension = msg.getResponseHeader().getHeader("Content-Type").substring(msg.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
-			
-			String url = msg.getRequestHeader().getHeader("Referer");
+			String url = msg.getRequestHeader().getURI().toString();
 					
 			byte imageReference[] = msg.getResponseBody().getBytes().clone();
 			ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
 			BufferedImage imageInBuffer;
 			
 			try {
-				imageInBuffer = ImageIO.read(imageValue);
-				
-				ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-				ImageIO.write(imageInBuffer, extension, tmp);
-				tmp.close();
-				Integer imageSize = tmp.size();
-				
-				this.storeImage(new ImageProperties(imageInBuffer.getHeight(), imageInBuffer.getWidth(), imageSize, extension, url));
+				if (imageValue != null){
+					imageInBuffer = ImageIO.read(imageValue);
+					
+					ByteArrayOutputStream tmp = new ByteArrayOutputStream();
+					
+					if (imageInBuffer != null && !extension.isEmpty()){
+						ImageIO.write(imageInBuffer, extension, tmp);
+						tmp.close();
+						Integer imageSize = tmp.size();
+						
+						this.storeImage(new HttpImage(imageInBuffer.getHeight(), imageInBuffer.getWidth(), imageSize, extension, url));
+					}
+				}
 				
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
-	private void storeImage(ImageProperties imgProperties ) {
-		imagePropertiesList.add(imgProperties);
+	private void storeImage(HttpImage imgProperties ) {
+		httpImageList.add(imgProperties);
 	}
 	
 }

@@ -1,6 +1,6 @@
 package org.zaproxy.zap.extension.imgreport;
 
-public class ImageProperties {
+public class HttpImage {
 	
 	private int height;
 	private int width;
@@ -8,7 +8,7 @@ public class ImageProperties {
 	private String extension;
 	private String url;
 
-	public ImageProperties(int height, int width, int imageSize, String extension, String url){
+	public HttpImage(int height, int width, int imageSize, String extension, String url){
 		this.setHeight(height);
 		this.setWidth(width);
 		this.setImageSize(imageSize);
