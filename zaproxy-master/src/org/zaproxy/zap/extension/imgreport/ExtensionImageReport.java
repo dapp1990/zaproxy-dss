@@ -139,15 +139,15 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("  <fileHeight>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getHeight());
-		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\"></min>\r\n");
+		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getHeight()).append("</min>\r\n");
+		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
 		
-		xml.append("    <max val=\"").append(siteImages.get(0).getHeight());
-		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\"></max>\r\n");
+		xml.append("    <max>").append(siteImages.get(0).getHeight()).append("</max>\r\n");
+		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
 		
-		xml.append("    <med val=\"").append(siteImages.get(medIndex).getHeight()).append("\"></med>\r\n");
+		xml.append("	<med>").append(siteImages.get(medIndex).getHeight()).append("</med>\r\n");
 		
-		xml.append("    <avg val=\"").append(avgFileHeight).append("\"></avg>\r\n");
+		xml.append("	<avg>").append(avgFileHeight).append("</avg>\r\n");
 		
 		xml.append("  </fileHeight>\r\n");
 		
@@ -182,15 +182,15 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("  <fileWidth>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getWidth());
-		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\"></min>\r\n");
+		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getWidth()).append("</min>\r\n");
+		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
 		
-		xml.append("    <max val=\"").append(siteImages.get(0).getWidth());
-		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\"></max>\r\n");
+		xml.append("    <max>").append(siteImages.get(0).getUrl()).append("</max>\r\n");
+		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
 		
-		xml.append("    <med val=\"").append(siteImages.get(medIndex).getWidth()).append("\"></med>\r\n");
+		xml.append("	<med>").append(siteImages.get(medIndex).getWidth()).append("</med>\r\n");
 		
-		xml.append("    <avg val=\"").append(avgFileWidth).append("\"></avg>\r\n");
+		xml.append("	<avg>").append(avgFileWidth).append("</avg>\r\n");
 		
 		xml.append("  </fileWidth>\r\n");
 		
@@ -226,17 +226,15 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		xml.append("  <filesize>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getImageSize());
-		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\"></min>\r\n");
+		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getImageSize()).append("</min>\r\n");
+		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
 		
-		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getImageSize());
+		xml.append("    <max>").append(siteImages.get(0).getImageSize()).append("</max>\r\n");
+		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
 		
-		xml.append("    <max val=\"").append(siteImages.get(0).getImageSize());
-		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\"></max>\r\n");
+		xml.append("	<med>").append(siteImages.get(medIndex).getImageSize()).append("</med>\r\n");
 		
-		xml.append("    <med val=\"").append(siteImages.get(medIndex).getImageSize()).append("\"></med>\r\n");
-		
-		xml.append("    <avg val=\"").append(avgFileSize).append("\"></avg>\r\n");
+		xml.append("	<avg>").append(avgFileSize).append("</avg>\r\n");
 		
 		xml.append("  </filesize>\r\n");
 		
