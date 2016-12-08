@@ -1,6 +1,3 @@
-// TODO Implement image type statistics
-// TODO Implement image width statistics
-// TODO Implement image height statistics
 // TODO Modify report.html.xsl file to get the information in HTML reports (you can find the file in zaproxy-dss/zaproxy-master/src/xml)
 // TODO Generalize methods/classes if it is possible
 // TODO Split responsibilities if it is possible
@@ -20,7 +17,6 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.httpclient.URI;
 import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
 import org.parosproxy.paros.model.SiteNode;
@@ -122,14 +118,14 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		
 		double totalAmountImages = siteImages.size();
 		StringBuilder xml = new StringBuilder();
-		xml.append("  <fileTypes>\r\n");
+		xml.append("  <filetypes>\r\n");
 		
 		for (Map.Entry<String, Integer> entry : fileTypes.entrySet())
 		{
-			xml.append("    <"+entry.getKey()+"=\"").append(100*entry.getValue()/totalAmountImages).append("\">\r\n");;
+			xml.append("    <"+entry.getKey()+">").append(100*entry.getValue()/totalAmountImages).append("</"+entry.getKey()+">\r\n");
 		}
 		
-		xml.append("  </fileTypes>\r\n");
+		xml.append("  </filetypes>\r\n");
 		return xml.toString();
 	}
 
@@ -144,14 +140,14 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		xml.append("  <fileHeight>\r\n");
 		
 		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getHeight());
-		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\">\r\n");
+		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\"></min>\r\n");
 		
 		xml.append("    <max val=\"").append(siteImages.get(0).getHeight());
-		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
+		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\"></max>\r\n");
 		
-		xml.append("    <med val=\"").append(siteImages.get(medIndex).getHeight()).append("\">\r\n");
+		xml.append("    <med val=\"").append(siteImages.get(medIndex).getHeight()).append("\"></med>\r\n");
 		
-		xml.append("    <avg val=\"").append(avgFileHeight).append("\">\r\n");
+		xml.append("    <avg val=\"").append(avgFileHeight).append("\"></avg>\r\n");
 		
 		xml.append("  </fileHeight>\r\n");
 		
@@ -187,14 +183,14 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		xml.append("  <fileWidth>\r\n");
 		
 		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getWidth());
-		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\">\r\n");
+		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\"></min>\r\n");
 		
 		xml.append("    <max val=\"").append(siteImages.get(0).getWidth());
-		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
+		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\"></max>\r\n");
 		
-		xml.append("    <med val=\"").append(siteImages.get(medIndex).getWidth()).append("\">\r\n");
+		xml.append("    <med val=\"").append(siteImages.get(medIndex).getWidth()).append("\"></med>\r\n");
 		
-		xml.append("    <avg val=\"").append(avgFileWidth).append("\">\r\n");
+		xml.append("    <avg val=\"").append(avgFileWidth).append("\"></avg>\r\n");
 		
 		xml.append("  </fileWidth>\r\n");
 		
@@ -231,14 +227,16 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		xml.append("  <filesize>\r\n");
 		
 		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getImageSize());
-		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\">\r\n");
+		xml.append("\" minurl=\"").append(siteImages.get((siteImages.size()-1)).getUrl()).append("\"></min>\r\n");
+		
+		xml.append("    <min val=\"").append(siteImages.get((siteImages.size()-1)).getImageSize());
 		
 		xml.append("    <max val=\"").append(siteImages.get(0).getImageSize());
-		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\">\r\n");
+		xml.append("\" maxurl=\"").append(siteImages.get(0).getUrl()).append("\"></max>\r\n");
 		
-		xml.append("    <med val=\"").append(siteImages.get(medIndex).getImageSize()).append("\">\r\n");
+		xml.append("    <med val=\"").append(siteImages.get(medIndex).getImageSize()).append("\"></med>\r\n");
 		
-		xml.append("    <avg val=\"").append(avgFileSize).append("\">\r\n");
+		xml.append("    <avg val=\"").append(avgFileSize).append("\"></avg>\r\n");
 		
 		xml.append("  </filesize>\r\n");
 		
@@ -280,37 +278,37 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 			HttpSender sender) {
 		
 		if (msg.getRequestHeader().isImage() && msg.getResponseBody().length() > 0 && !msg.getResponseHeader().isEmpty()) {
-			
-			String extension = msg.getResponseHeader().getHeader("Content-Type").substring(msg.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
-			String url = msg.getRequestHeader().getURI().toString();
-					
-			byte imageReference[] = msg.getResponseBody().getBytes().clone();
-			ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
-			BufferedImage imageInBuffer;
-			
-			try {
-				if (imageValue != null){
-					imageInBuffer = ImageIO.read(imageValue);
-					
-					ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-					
-					if (imageInBuffer != null && !extension.isEmpty()){
-						ImageIO.write(imageInBuffer, extension, tmp);
-						tmp.close();
-						Integer imageSize = tmp.size();
-						
-						this.storeImage(new HttpImage(imageInBuffer.getHeight(), imageInBuffer.getWidth(), imageSize, extension, url));
-					}
-				}
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			addHttpImage(msg);
 		}
 	}
 
-	private void storeImage(HttpImage imgProperties ) {
-		httpImageList.add(imgProperties);
+	private void addHttpImage(HttpMessage msg) {
+		
+		String extension = msg.getResponseHeader().getHeader("Content-Type").substring(msg.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
+		String url = msg.getRequestHeader().getURI().toString();
+				
+		byte imageReference[] = msg.getResponseBody().getBytes().clone();
+		ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
+		BufferedImage imageInBuffer;
+		
+		try {
+			if (imageValue != null){
+				imageInBuffer = ImageIO.read(imageValue);
+				
+				ByteArrayOutputStream tmp = new ByteArrayOutputStream();
+				
+				if (imageInBuffer != null && !extension.isEmpty()){
+					ImageIO.write(imageInBuffer, extension, tmp);
+					tmp.close();
+					Integer imageSize = tmp.size();
+					
+					httpImageList.add(new HttpImage(imageInBuffer.getHeight(), imageInBuffer.getWidth(), imageSize, extension, url, imageInBuffer));
+				}
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 }

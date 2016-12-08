@@ -1,5 +1,7 @@
 package org.zaproxy.zap.extension.imgreport;
 
+import java.awt.image.BufferedImage;
+
 public class HttpImage {
 	
 	private int height;
@@ -7,13 +9,15 @@ public class HttpImage {
 	private int imageSize;
 	private String extension;
 	private String url;
+	private BufferedImage bufferedImage;
 
-	public HttpImage(int height, int width, int imageSize, String extension, String url){
+	public HttpImage(int height, int width, int imageSize, String extension, String url, BufferedImage bufferedImage){
 		this.setHeight(height);
 		this.setWidth(width);
 		this.setImageSize(imageSize);
 		this.setExtension(extension);
 		this.setUrl(url);
+		this.setBufferedImage(bufferedImage);
 	}
 
 	public int getHeight() {
@@ -54,6 +58,14 @@ public class HttpImage {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public BufferedImage getBufferedImage() {
+		return bufferedImage;
+	}
+
+	public void setBufferedImage(BufferedImage bufferedImage) {
+		this.bufferedImage = bufferedImage;
 	}
 	
 	

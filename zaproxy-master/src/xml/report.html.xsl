@@ -21,6 +21,7 @@
 <p>
 <xsl:apply-templates select="text()"/>
 </p>
+
 <p><strong>Summary of Alerts</strong></p>
 <table width="45%" border="0">
   <tr bgcolor="#666666"> 
@@ -56,6 +57,91 @@
 </table>
 <p></p>
 <p></p>
+
+  <p><strong>Images Report</strong></p>
+  <xsl:template match="fileTypes">
+<p></p>
+<table width="100%" border="0">
+<xsl:apply-templates select="text()|min|max|med|avg"/>
+</table>
+  </xsl:template>
+
+
+
+<xsl:template match="min">
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimum</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+    <xsl:apply-templates select="text()|*"/>
+    </font></td>
+  </tr>
+  <TR vAlign="top"> 
+    <TD colspan="2"> </TD>
+  </TR>
+  </xsl:template>
+
+
+<xsl:template match="max">
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimum</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+    <xsl:apply-templates select="text()|*"/>
+    </font></td>
+  </tr>
+  <TR vAlign="top"> 
+    <TD colspan="2"> </TD>
+  </TR>
+  
+  </xsl:template>
+
+  <xsl:template match="med">
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Medium</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+    <xsl:apply-templates select="text()|*"/>
+    </font></td>
+  </tr>
+  <TR vAlign="top"> 
+    <TD colspan="2"> </TD>
+  </TR>
+  
+  </xsl:template>
+
+  <xsl:template match="avg">
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Average</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+    <xsl:apply-templates select="text()|*"/>
+    </font></td>
+  </tr>
+  <TR vAlign="top"> 
+    <TD colspan="2"> </TD>
+  </TR>
+  </xsl:template>
+
+  <!--
+  <table border="1">
+    <tr bgcolor="#9acd32">
+      <th style="text-align:left">Minimum</th>
+      <th style="text-align:left">Maximum</th>
+      <th style="text-align:left">Median</th>
+      <th style="text-align:left">Average</th>
+    </tr>
+    <xsl:for-each select="imagestatistics/fileTypes">
+    <tr>
+      <td><xsl:value-of select="min"/></td>
+      <td><xsl:value-of select="max"/></td>
+      <td><xsl:value-of select="med"/></td>
+      <td><xsl:value-of select="avg"/></td>
+    </tr>
+    </xsl:for-each>
+  </table>
+-->
+
 <p><strong>Alert Detail</strong></p>
 
 <xsl:apply-templates select="descendant::alertitem">
