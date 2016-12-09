@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -82,181 +83,37 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	
 	@Override
 	public String getXml(SiteNode site) {
-	
+		
 		ArrayList<HttpImage> siteImages = new ArrayList<HttpImage>(httpImageList);
 		
 		// Filter out images from other sites
 		siteImages.removeIf(httpImg -> !httpImg.getUrl().startsWith(site.getNodeName()));
 		
 		StringBuilder xml = new StringBuilder();
-		
 		// If there is not images in the site, <ImageStatistics> tag is empty
 		
 		xml.append("\r\n<imagestatistics>\r\n");
+		/*
 		if (!siteImages.isEmpty()){
 			xml.append(getFileSizeStatistics(siteImages));
 			xml.append(getFileWidthStatistics(siteImages));
 			xml.append(getFileHeightStatistics(siteImages));
 			xml.append(getFileTypeStatistics(siteImages));
 		}
+		*/
+		
+		Reflections reflections = new Reflections("org.zaproxy.zap.extension.imgreport");
+
+		Set<ImageStatistics> allImageStatistics = 
+				reflections.getSubTypesOf(ImageStatistics.class);
+		
+		for (ImageStatistics imgStat : allImageStatistics){
+			xml.append(imgStat.getXML(siteImages));
+		}
 		
 		xml.append("</imagestatistics>\r\n");
 		
 		return xml.toString();
-	}
-
-	private String getFileTypeStatistics(List<HttpImage> siteImages) {
-		HashMap<String,Integer> fileTypes = new HashMap<String, Integer>();
-		
-		for (HttpImage imgProperties : siteImages){
-			if (fileTypes.containsKey(imgProperties.getExtension())){
-				fileTypes.put(imgProperties.getExtension(), fileTypes.get(imgProperties.getExtension())+1);
-			} else {
-				fileTypes.put(imgProperties.getExtension(), 1);
-			}
-		}
-		
-		double totalAmountImages = siteImages.size();
-		StringBuilder xml = new StringBuilder();
-		xml.append("  <filetypes>\r\n");
-		
-		for (Map.Entry<String, Integer> entry : fileTypes.entrySet())
-		{
-			xml.append("    <"+entry.getKey()+">").append(100*entry.getValue()/totalAmountImages).append("</"+entry.getKey()+">\r\n");
-		}
-		
-		xml.append("  </filetypes>\r\n");
-		return xml.toString();
-	}
-
-	private String getFileHeightStatistics(List<HttpImage> siteImages) {
-		sortByFileHeight(siteImages);
-		
-		StringBuilder xml = new StringBuilder();
-		
-		int medIndex = siteImages.size()/2;
-		double avgFileHeight = getAvgImageHeight(siteImages);
-		
-		xml.append("  <fileHeight>\r\n");
-		
-		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getHeight()).append("</min>\r\n");
-		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
-		
-		xml.append("    <max>").append(siteImages.get(0).getHeight()).append("</max>\r\n");
-		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
-		
-		xml.append("	<med>").append(siteImages.get(medIndex).getHeight()).append("</med>\r\n");
-		
-		xml.append("	<avg>").append(avgFileHeight).append("</avg>\r\n");
-		
-		xml.append("  </fileHeight>\r\n");
-		
-		return xml.toString();
-	}
-
-	private double getAvgImageHeight(List<HttpImage> siteImages) {
-		int counter = 0;
-		
-		for(HttpImage img: siteImages){
-			counter += img.getHeight();
-		}
-		
-		return counter/siteImages.size();
-	}
-
-	private void sortByFileHeight(List<HttpImage> siteImages) {
-		Collections.sort(httpImageList, new Comparator<HttpImage>() {
-            public int compare(HttpImage o1, HttpImage o2) {
-                return o1.getHeight() > o2.getHeight() ? -1 : o1.getHeight() == o2.getHeight() ? 0 : 1;
-            }
-        });
-	}
-
-	private String getFileWidthStatistics(List<HttpImage> siteImages) {
-		sortByFileWidth(siteImages);
-		
-		StringBuilder xml = new StringBuilder();
-		
-		int medIndex = siteImages.size()/2;
-		double avgFileWidth = getAvgImageWidth(siteImages);
-		
-		xml.append("  <fileWidth>\r\n");
-		
-		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getWidth()).append("</min>\r\n");
-		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
-		
-		xml.append("    <max>").append(siteImages.get(0).getUrl()).append("</max>\r\n");
-		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
-		
-		xml.append("	<med>").append(siteImages.get(medIndex).getWidth()).append("</med>\r\n");
-		
-		xml.append("	<avg>").append(avgFileWidth).append("</avg>\r\n");
-		
-		xml.append("  </fileWidth>\r\n");
-		
-		return xml.toString();
-	}
-
-	private double getAvgImageWidth(List<HttpImage> siteImages) {
-		int counter = 0;
-		
-		for(HttpImage img: siteImages){
-			counter += img.getWidth();
-		}
-		
-		return counter/siteImages.size();
-	}
-
-	private void sortByFileWidth(List<HttpImage> siteImages) {
-		Collections.sort(httpImageList, new Comparator<HttpImage>() {
-            public int compare(HttpImage o1, HttpImage o2) {
-                return o1.getWidth() > o2.getWidth() ? -1 : o1.getWidth() == o2.getWidth() ? 0 : 1;
-            }
-        });
-	}
-
-	private String getFileSizeStatistics(List<HttpImage> siteImages) {
-		
-		sortByFileSize(siteImages);
-		
-		StringBuilder xml = new StringBuilder();
-		
-		int medIndex = siteImages.size()/2;
-		double avgFileSize = getAvgImageSize(siteImages);
-		
-		xml.append("  <filesize>\r\n");
-		
-		xml.append("    <min>").append(siteImages.get((siteImages.size()-1)).getImageSize()).append("</min>\r\n");
-		xml.append("	<minurl><![CDATA[").append(siteImages.get((siteImages.size()-1)).getUrl()).append("]]></minurl>\r\n");
-		
-		xml.append("    <max>").append(siteImages.get(0).getImageSize()).append("</max>\r\n");
-		xml.append("	<maxurl><![CDATA[").append(siteImages.get(0).getUrl()).append("]]></maxurl>\r\n");
-		
-		xml.append("	<med>").append(siteImages.get(medIndex).getImageSize()).append("</med>\r\n");
-		
-		xml.append("	<avg>").append(avgFileSize).append("</avg>\r\n");
-		
-		xml.append("  </filesize>\r\n");
-		
-		return xml.toString();
-	}
-
-	private double getAvgImageSize(List<HttpImage> siteImages) {
-		int counter = 0;
-		
-		for(HttpImage img: siteImages){
-			counter += img.getImageSize();
-		}
-		
-		return counter/siteImages.size();
-	}
-
-	private void sortByFileSize(List<HttpImage> imagePropertiesList) {
-		Collections.sort(imagePropertiesList, new Comparator<HttpImage>() {
-            public int compare(HttpImage o1, HttpImage o2) {
-                return o1.getImageSize() > o2.getImageSize() ? -1 : o1.getImageSize() == o2.getImageSize() ? 0 : 1;
-            }
-        });
 	}
 
 	@Override
