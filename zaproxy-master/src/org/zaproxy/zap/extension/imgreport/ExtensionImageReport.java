@@ -90,18 +90,22 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		siteImages.removeIf(httpImg -> !httpImg.getUrl().startsWith(site.getNodeName()));
 		
 		StringBuilder xml = new StringBuilder();
+
 		// If there is not images in the site, <ImageStatistics> tag is empty
 		
 		xml.append("\r\n<imagestatistics>\r\n");
 		/*
 		if (!siteImages.isEmpty()){
+			xml.append("\r\n<imagestatistics>\r\n");
+			xml.append("\r\n<site>").append(site.getNodeName()).append("</site>\r\n");
 			xml.append(getFileSizeStatistics(siteImages));
 			xml.append(getFileWidthStatistics(siteImages));
 			xml.append(getFileHeightStatistics(siteImages));
 			xml.append(getFileTypeStatistics(siteImages));
+			xml.append("</imagestatistics>\r\n");
 		}
 		*/
-		
+	
 		Reflections reflections = new Reflections("org.zaproxy.zap.extension.imgreport");
 
 		Set<ImageStatistics> allImageStatistics = 
@@ -111,7 +115,9 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 			xml.append(imgStat.getXML(siteImages));
 		}
 		
+
 		xml.append("</imagestatistics>\r\n");
+
 		
 		return xml.toString();
 	}

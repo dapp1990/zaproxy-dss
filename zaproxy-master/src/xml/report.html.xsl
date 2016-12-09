@@ -56,73 +56,6 @@
   </tr>
 </table>
 <p></p>
-<p></p>
-
-  <p><strong>Images Report</strong></p>
-  <xsl:template match="fileTypes">
-<p></p>
-<table width="100%" border="0">
-<xsl:apply-templates select="text()|min|max|med|avg"/>
-</table>
-  </xsl:template>
-
-
-
-<xsl:template match="min">
-  <tr bgcolor="#e8e8e8" valign="top"> 
-    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimum</p></font></td>
-    <td width="80%">
-    <font size="2" face="Arial, Helvetica, sans-serif">
-    <xsl:apply-templates select="text()|*"/>
-    </font></td>
-  </tr>
-  <TR vAlign="top"> 
-    <TD colspan="2"> </TD>
-  </TR>
-  </xsl:template>
-
-
-<xsl:template match="max">
-  <tr bgcolor="#e8e8e8" valign="top"> 
-    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimum</p></font></td>
-    <td width="80%">
-    <font size="2" face="Arial, Helvetica, sans-serif">
-    <xsl:apply-templates select="text()|*"/>
-    </font></td>
-  </tr>
-  <TR vAlign="top"> 
-    <TD colspan="2"> </TD>
-  </TR>
-  
-  </xsl:template>
-
-  <xsl:template match="med">
-  <tr bgcolor="#e8e8e8" valign="top"> 
-    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Medium</p></font></td>
-    <td width="80%">
-    <font size="2" face="Arial, Helvetica, sans-serif">
-    <xsl:apply-templates select="text()|*"/>
-    </font></td>
-  </tr>
-  <TR vAlign="top"> 
-    <TD colspan="2"> </TD>
-  </TR>
-  
-  </xsl:template>
-
-  <xsl:template match="avg">
-  <tr bgcolor="#e8e8e8" valign="top"> 
-    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Average</p></font></td>
-    <td width="80%">
-    <font size="2" face="Arial, Helvetica, sans-serif">
-    <xsl:apply-templates select="text()|*"/>
-    </font></td>
-  </tr>
-  <TR vAlign="top"> 
-    <TD colspan="2"> </TD>
-  </TR>
-  </xsl:template>
-
   <!--
   <table border="1">
     <tr bgcolor="#9acd32">
@@ -142,14 +75,208 @@
   </table>
 -->
 
+<xsl:apply-templates select="descendant::imagestatistics">
+  
+</xsl:apply-templates>
+
 <p><strong>Alert Detail</strong></p>
 
 <xsl:apply-templates select="descendant::alertitem">
   <xsl:sort order="descending" data-type="number" select="riskcode"/>
   <xsl:sort order="descending" data-type="number" select="confidence"/>
 </xsl:apply-templates>
+
 </body>
 </html>
+</xsl:template>
+
+  <xsl:template match="imagestatistics">
+    <p><strong>Image statistics of site <xsl:value-of select="site"/></strong></p>
+
+  <table border="0">
+  <tr bgcolor="#666666"><td colspan="2"><strong><font color="#FFFFFF" size="2" face="Arial, Helvetica, sans-serif">Image type statistics</font></strong></td></tr>
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>jpeg</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filetypes/jpeg"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>png</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filetypes/png"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>gif</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filetypes/gif"/></p>
+    </font></td>
+  </tr>
+
+  </table>
+
+  <table border="0">
+    <tr bgcolor="#666666"><td colspan="2"><strong><font color="#FFFFFF" size="2" face="Arial, Helvetica, sans-serif">File size statistics</font></strong></td></tr>
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimun</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filesize/min"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimun URL</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filesize/minurl"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Maximum</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filesize/max"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Maximum URL</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filesize/maxurl"/></p>
+    </font></td>
+  </tr>
+
+<tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Medium</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filesize/med"/></p>
+    </font></td>
+  </tr>
+
+
+<tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Average</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filesize/avg"/></p>
+    </font></td>
+  </tr>
+  </table>
+
+    <table border="0">
+      <tr bgcolor="#666666"><td colspan="2"><strong><font color="#FFFFFF" size="2" face="Arial, Helvetica, sans-serif">Image width statistics</font></strong></td></tr>
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimun</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filewidth/min"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimun URL</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filewidth/minurl"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Maximum</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filewidth/max"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Maximum URL</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filewidth/maxurl"/></p>
+    </font></td>
+  </tr>
+
+<tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Medium</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filewidth/med"/></p>
+    </font></td>
+  </tr>
+
+
+<tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Average</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="filewidth/avg"/></p>
+    </font></td>
+  </tr>
+  </table>
+
+    <table border="0">
+      <tr bgcolor="#666666"><td colspan="2"><strong><font color="#FFFFFF" size="2" face="Arial, Helvetica, sans-serif">Image height statistics</font></strong></td></tr>
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimun</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="fileheight/min"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Minimun URL</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="fileheight/minurl"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Maximum</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="fileheight/max"/></p>
+    </font></td>
+  </tr>
+
+  <tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Maximum URL</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="fileheight/maxurl"/></p>
+    </font></td>
+  </tr>
+
+<tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Medium</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="fileheight/med"/></p>
+    </font></td>
+  </tr>
+
+
+<tr bgcolor="#e8e8e8" valign="top"> 
+    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif"><p>Average</p></font></td>
+    <td width="80%">
+    <font size="2" face="Arial, Helvetica, sans-serif">
+      <p><xsl:value-of select="fileheight/avg"/></p>
+    </font></td>
+  </tr>
+  </table>
+
 </xsl:template>
 
   <!-- Top Level Heading -->
