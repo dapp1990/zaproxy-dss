@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FileTypeStatistics extends ImageStatistics{
+public class ImageTypeStatistics extends ImageStatistics{
 	
-	public FileTypeStatistics(){
+	public ImageTypeStatistics(){
 		
 	}
 

@@ -1,8 +1,8 @@
 package org.zaproxy.zap.extension.imgreport;
 
-public class FileWidthStatistics extends ImageDimensionStatistics{
+public class ImageWidthStatistics extends ImageDimensionStatistics{
 	
-	public FileWidthStatistics(){
+	public ImageWidthStatistics(){
 		super("fileheight", "getHeight");
 	}
 	

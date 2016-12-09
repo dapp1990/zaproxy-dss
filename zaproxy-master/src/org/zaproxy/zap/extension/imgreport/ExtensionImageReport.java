@@ -31,6 +31,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	
 	private static final String NAME = "ExtensionImageReport";
 	private List<HttpImage> httpImageList;
+	private List<ImageStatistics> usedImageStatistics;
 	
 	//private ResourceBundle messages = null;
 
@@ -51,6 +52,11 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
      	HttpSender.addListener(this);
      	
      	httpImageList = new ArrayList<HttpImage>();
+     	usedImageStatistics = new ArrayList<ImageStatistics>();
+     	usedImageStatistics.add(new ImageTypeStatistics());
+     	usedImageStatistics.add(new ImageSizeStatistics());
+     	usedImageStatistics.add(new ImageWidthStatistics());
+     	usedImageStatistics.add(new ImageHeightStatistics());
     }
 
     @Override
@@ -105,7 +111,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 			xml.append("</imagestatistics>\r\n");
 		}
 		*/
-	
+		/*
 		Reflections reflections = new Reflections("org.zaproxy.zap.extension.imgreport");
 
 		Set<ImageStatistics> allImageStatistics = 
@@ -114,10 +120,12 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 		for (ImageStatistics imgStat : allImageStatistics){
 			xml.append(imgStat.getXML(siteImages));
 		}
+		*/
 		
-
+		for(ImageStatistics statMaker : usedImageStatistics) {
+			xml.append(statMaker.getXML(siteImages));
+		}
 		xml.append("</imagestatistics>\r\n");
-
 		
 		return xml.toString();
 	}
