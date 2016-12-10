@@ -20,7 +20,7 @@ public class FormatFileToFilterInfo { //extends FormatterAbstractReplace<String,
 		this.url = formatFileURL;
 	}
 	
-	public Pair<Integer,ArrayList<InappropriateElement<String>>> getFormat() {
+	public Pair<Integer,ArrayList<InappropriateElement<String>>> getFilterParameters() {
 		
 		ArrayList<InappropriateElement<String>> inappropriateElements = new ArrayList<InappropriateElement<String>>();
 		int threshold = Integer.MAX_VALUE;
@@ -45,7 +45,7 @@ public class FormatFileToFilterInfo { //extends FormatterAbstractReplace<String,
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return new Pair(threshold, inappropriateElements);
+		return new Pair<Integer,ArrayList<InappropriateElement<String>>>(threshold, inappropriateElements);
 	}
 	
 	private List<String> argumentationToList(String tags) {

@@ -4,19 +4,8 @@
 
 package org.zaproxy.zap.extension.imgreport;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.imageio.ImageIO;
 
 import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
@@ -147,37 +136,8 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 			HttpSender sender) {
 		
 		if (msg.getRequestHeader().isImage() && msg.getResponseBody().length() > 0 && !msg.getResponseHeader().isEmpty()) {
-			addHttpImage(msg);
+			httpImageList.add(new HttpImage(msg));
 		}
 	}
 
-	private void addHttpImage(HttpMessage msg) {
-		
-		String extension = msg.getResponseHeader().getHeader("Content-Type").substring(msg.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
-		String url = msg.getRequestHeader().getURI().toString();
-				
-		byte imageReference[] = msg.getResponseBody().getBytes().clone();
-		ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
-		BufferedImage imageInBuffer;
-		
-		try {
-			if (imageValue != null){
-				imageInBuffer = ImageIO.read(imageValue);
-				
-				ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-				
-				if (imageInBuffer != null && !extension.isEmpty()){
-					ImageIO.write(imageInBuffer, extension, tmp);
-					tmp.close();
-					Integer imageSize = tmp.size();
-					
-					httpImageList.add(new HttpImage(imageInBuffer.getHeight(), imageInBuffer.getWidth(), imageSize, extension, url, imageInBuffer));
-				}
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
 }

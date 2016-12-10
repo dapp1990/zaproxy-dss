@@ -7,7 +7,7 @@
 // the placeholder will tell the user it’s because of racist and fearmongering content."
 
 
-package org.parosproxy.paros.extension.filter.classifier;
+package org.parosproxy.paros.extension.filter.algorithm;
 
 import java.util.ArrayList;
 
@@ -21,49 +21,32 @@ import org.zaproxy.zap.network.HttpResponseBody;
 import javafx.util.Pair;
 
 public class FilterApplyer extends
-		ClassifierAbstract<HttpMessage, String> {
+ClassifierAbstract<String> {
 
 	@Override
-	public String getClassification(HttpMessage msg) {
-		
-		String result = "";
+	public String applyBasicStringFilter(String content, Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile) {
+
+		String resultDescription = "";
 		int totalWeight = 0;
-		
-		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo("resources/contentFormat.txt");
-		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFormat();
-		
+
 		ArrayList<InappropriateElement<String>> inappropriate_tags = parsedFormatFile.getValue();
-		
-		HttpResponseHeader header = msg.getResponseHeader();
-		HttpResponseBody body = msg.getResponseBody();
-		
-		if (header.isEmpty()) {
-			return result;
-		}
-		
-		if (msg.getResponseHeader().isImage()) {
-			return result;
-		}
-		
-		if (body.length() > 0){
-			String BodyAsString = body.toString();
-			for (InappropriateElement<String> inapElement : inappropriate_tags) {
-				if(BodyAsString.contains(inapElement.getInappropriateContent())){
-					totalWeight += inapElement.getWeight();
-					result += inapElement.getInappropriateContent();
-					for(String tag : inapElement.getTags()) {
-						result = result + " " + tag;
-					}
+
+		for (InappropriateElement<String> inapElement : inappropriate_tags) {
+			if(content.contains(inapElement.getInappropriateContent())){
+				totalWeight += inapElement.getWeight();
+				resultDescription += inapElement.getInappropriateContent() + " due to: ";
+				for(String tag : inapElement.getTags()) {
+					resultDescription += " " + tag;
 				}
+				resultDescription += "\n";
 			}
 		}
-		
-		// Checking threshold
-		if(totalWeight <= parsedFormatFile.getKey()){
-			result = "";
-		}
-		
-		return result;
 
+		// Checking threshold
+		if(totalWeight < parsedFormatFile.getKey()){
+			return content;
+		} else {
+			return "PAGE WAS BLOCKED - The following tags were deemed inappropriate: \n" +resultDescription;
+		}
 	}
 }

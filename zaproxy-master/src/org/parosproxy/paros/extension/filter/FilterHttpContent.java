@@ -1,8 +1,17 @@
 package org.parosproxy.paros.extension.filter;
 
+import java.util.ArrayList;
+
 import org.parosproxy.paros.Constant;
-import org.parosproxy.paros.extension.filter.classifier.FilterApplyer;
+import org.parosproxy.paros.extension.filter.algorithm.FilterApplyer;
+import org.parosproxy.paros.extension.filter.content.PageStringContent;
+import org.parosproxy.paros.extension.filter.formatter.FormatFileToFilterInfo;
+import org.parosproxy.paros.extension.filter.formatter.InappropriateElement;
 import org.parosproxy.paros.network.HttpMessage;
+import org.parosproxy.paros.network.HttpResponseHeader;
+import org.zaproxy.zap.network.HttpResponseBody;
+
+import javafx.util.Pair;
 
 public class FilterHttpContent extends FilterAdaptor {
 
@@ -25,12 +34,17 @@ public class FilterHttpContent extends FilterAdaptor {
 
 	@Override
 	public void onHttpResponseReceive(HttpMessage httpMessage) {
+		HttpResponseHeader header = httpMessage.getResponseHeader();
+		HttpResponseBody body = httpMessage.getResponseBody();
+		if (header.isEmpty() || header.isImage() || body.length() == 0) {
+			return;		//Do nothing with the message if there is no content to filter.
+		}
 		
-		String inappropriateTags = (new FilterApplyer()).getClassification(httpMessage);
-		
-		if (! inappropriateTags.isEmpty()) {
-			httpMessage.setResponseBody("PAGE WAS BLOCKED - The content of this page is " + inappropriateTags);
-        }
+		String content = (new PageStringContent(httpMessage)).getContent();
+		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo("resources/contentFormat.txt");
+		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFilterParameters();
+		String filterResult = (new FilterApplyer()).applyBasicStringFilter(content, parsedFormatFile);
+		httpMessage.setResponseBody(filterResult);
         
 	}
 }
