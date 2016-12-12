@@ -47,7 +47,6 @@ import org.parosproxy.paros.extension.SessionChangedListener;
 import org.parosproxy.paros.model.Session;
 import org.parosproxy.paros.model.SiteNode;
 import org.parosproxy.paros.view.View;
-import org.zaproxy.zap.extension.api.API;
 import org.zaproxy.zap.extension.help.ExtensionHelp;
 import org.zaproxy.zap.model.Context;
 import org.zaproxy.zap.model.ScanController;
@@ -111,15 +110,6 @@ public class ExtensionSpider extends ExtensionAdaptor implements SessionChangedL
 	}
 
 	/**
-	 * Instantiates a new extension spider.
-	 * 
-	 * @param name the name
-	 */
-	public ExtensionSpider(String name) {
-		super(name);
-	}
-
-	/**
 	 * This method initializes this extension.
 	 */
 	private void initialize() {
@@ -150,7 +140,7 @@ public class ExtensionSpider extends ExtensionAdaptor implements SessionChangedL
 		// Register as an API implementor
 		spiderApi = new SpiderAPI(this);
 		spiderApi.addApiOptions(getSpiderParam());
-		API.getInstance().registerApiImplementor(spiderApi);
+		extensionHook.addApiImplementor(spiderApi);
 	}
 
 	@Override
@@ -399,9 +389,33 @@ public class ExtensionSpider extends ExtensionAdaptor implements SessionChangedL
 	 * parsers added will be loaded whenever starting any scan.
 	 * 
 	 * @param parser the parser
+	 * @throws IllegalArgumentException if the given parameter is {@code null}.
+	 * @see #removeCustomParser(SpiderParser)
 	 */
 	public void addCustomParser(SpiderParser parser) {
+		validateParameterNonNull(parser, "parser");
 		this.customParsers.add(parser);
+	}
+
+	private static void validateParameterNonNull(Object object, String name) {
+		if (object == null) {
+			throw new IllegalArgumentException("Parameter " + name + " must not be null.");
+		}
+	}
+
+	/**
+	 * Removes the given spider parser.
+	 * <p>
+	 * Nothing happens if the given parser was not previously added.
+	 * 
+	 * @param parser the parser
+	 * @throws IllegalArgumentException if the given parameter is {@code null}.
+	 * @since TODO add version
+	 * @see #addCustomParser(SpiderParser)
+	 */
+	public void removeCustomParser(SpiderParser parser) {
+		validateParameterNonNull(parser, "parser");
+		this.customParsers.remove(parser);
 	}
 
 	/**
@@ -411,9 +425,27 @@ public class ExtensionSpider extends ExtensionAdaptor implements SessionChangedL
 	 * filters added will be loaded whenever starting any scan.
 	 * 
 	 * @param filter the filter
+	 * @throws IllegalArgumentException if the given parameter is {@code null}.
+	 * @see #removeCustomFetchFilter(FetchFilter)
 	 */
 	public void addCustomFetchFilter(FetchFilter filter) {
+		validateParameterNonNull(filter, "filter");
 		this.customFetchFilters.add(filter);
+	}
+
+	/**
+	 * Removes the given fetch filter.
+	 * <p>
+	 * Nothing happens if the given filter was not previously added.
+	 * 
+	 * @param filter the filter
+	 * @throws IllegalArgumentException if the given parameter is {@code null}.
+	 * @since TODO add version
+	 * @see #addCustomFetchFilter(FetchFilter)
+	 */
+	public void removeCustomFetchFilter(FetchFilter filter) {
+		validateParameterNonNull(filter, "filter");
+		this.customFetchFilters.remove(filter);
 	}
 
 	/**
@@ -423,9 +455,27 @@ public class ExtensionSpider extends ExtensionAdaptor implements SessionChangedL
 	 * filters added will be loaded whenever starting any scan.
 	 * 
 	 * @param filter the filter
+	 * @throws IllegalArgumentException if the given parameter is {@code null}.
+	 * @see #removeCustomParseFilter(ParseFilter)
 	 */
 	public void addCustomParseFilter(ParseFilter filter) {
+		validateParameterNonNull(filter, "filter");
 		this.customParseFilters.add(filter);
+	}
+
+	/**
+	 * Removes the given parse filter.
+	 * <p>
+	 * Nothing happens if the given filter was not previously added.
+	 * 
+	 * @param filter the filter
+	 * @throws IllegalArgumentException if the given parameter is {@code null}.
+	 * @since TODO add version
+	 * @see #addCustomParseFilter(ParseFilter)
+	 */
+	public void removeCustomParseFilter(ParseFilter filter) {
+		validateParameterNonNull(filter, "filter");
+		this.customParseFilters.remove(filter);
 	}
 
 	/**
@@ -701,6 +751,7 @@ public class ExtensionSpider extends ExtensionAdaptor implements SessionChangedL
         if (menuItemCustomScan  == null) {
             menuItemCustomScan = new ZapMenuItem("menu.tools.spider",
                     KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | Event.ALT_MASK, false));
+            menuItemCustomScan.setEnabled(Control.getSingleton().getMode() != Mode.safe);
 
             menuItemCustomScan.addActionListener(new java.awt.event.ActionListener() {
                 @Override

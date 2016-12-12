@@ -805,15 +805,17 @@ public class AddOnLoader extends URLClassLoader {
                 }
             } catch (Throwable e) {
             	// Often not an error
-            	logger.debug(e.getMessage());
+            	logger.debug(e.getMessage(), e);
             }
         }
         return listClass;
 	}
 
     /**
-     * Check local jar (paros.jar) or related package if any target file is found.
-     *
+     * Check local jar (zap.jar) or related package if any target file is found.
+     * 
+     * @param packageName the package name that the class must belong too
+     * @return a {@code List} with all the classes belonging to the given package
      */
     private List<ClassNameWrapper> getLocalClassNames (String packageName) {
     

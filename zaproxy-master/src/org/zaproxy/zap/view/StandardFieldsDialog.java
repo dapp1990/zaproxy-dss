@@ -45,6 +45,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -96,43 +97,110 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 	private Map<String, JPanel> tabNameMap = new HashMap<String, JPanel>(); 
 
 	/**
-	 * For backwards binary compatibility
-	 * @param owner
-	 * @param titleLabel
-	 * @param dim
+	 * Flag that indicates whether or not the dialogue is automatically hidden when {@link #save() saved}.
+	 * 
+	 * @see #isHideOnSave()
+	 */
+	private boolean hideOnSave;
+
+	/**
+	 * Constructs a {@code StandardFieldsDialog} with the given owner, title and dimensions.
+	 * 
+	 * @param owner the owner of the dialogue
+	 * @param titleLabel the title of the dialogue
+	 * @param dim the dimensions of the dialogue
 	 */
 	public StandardFieldsDialog(Frame owner, String titleLabel, Dimension dim) {
 		this((Window)owner, titleLabel, dim);
 	}
 
+	/**
+	 * Constructs a {@code StandardFieldsDialog} with the given owner, title, dimensions and whether or not it's modal.
+	 * 
+	 * @param owner the owner of the dialogue
+	 * @param titleLabel the title of the dialogue
+	 * @param dim the dimensions of the dialogue
+	 * @param modal {@code true} if the dialogue should be modal, {@code false} otherwise
+	 */
 	public StandardFieldsDialog(Window owner, String titleLabel, Dimension dim, boolean modal) {
 		this(owner, titleLabel, dim, null, modal);
 	}
 
+	/**
+	 * Constructs a {@code StandardFieldsDialog} with the given owner, title and dimensions.
+	 * 
+	 * @param owner the owner of the dialogue
+	 * @param titleLabel the title of the dialogue
+	 * @param dim the dimensions of the dialogue
+	 */
 	public StandardFieldsDialog(Window owner, String titleLabel, Dimension dim) {
 		this(owner, titleLabel, dim, null);
 	}
 
 	/**
-	 * For backwards binary compatibility
-	 * @param owner
-	 * @param titleLabel
-	 * @param dim
-	 * @param tabLabels
+	 * Constructs a {@code StandardFieldsDialog} with the given owner, title, dimensions and tab names.
+	 * 
+	 * @param owner the owner of the dialogue
+	 * @param titleLabel the title of the dialogue
+	 * @param dim the dimensions of the dialogue
+	 * @param tabLabels the names of the tabs
 	 */
 	public StandardFieldsDialog(Frame owner, String titleLabel, Dimension dim, String[] tabLabels) {
 		this((Window)owner, titleLabel, dim, tabLabels);
 	}
 	
+	/**
+	 * Constructs a {@code StandardFieldsDialog} with the given owner, title, dimensions and tab names.
+	 * 
+	 * @param owner the owner of the dialogue
+	 * @param titleLabel the title of the dialogue
+	 * @param dim the dimensions of the dialogue
+	 * @param tabLabels the names of the tabs
+	 */
 	public StandardFieldsDialog(Window owner, String titleLabel, Dimension dim, String[] tabLabels) {
 		this(owner, titleLabel, dim, tabLabels, false);
 	}
 
+	/**
+	 * Constructs a {@code StandardFieldsDialog} with the given owner, title, dimensions, tab names and whether or not it's
+	 * modal.
+	 * 
+	 * @param owner the owner of the dialogue
+	 * @param titleLabel the title of the dialogue
+	 * @param dim the dimensions of the dialogue
+	 * @param tabLabels the names of the tabs
+	 * @param modal {@code true} if the dialogue should be modal, {@code false} otherwise
+	 */
 	public StandardFieldsDialog(Window owner, String titleLabel, Dimension dim, String[] tabLabels, boolean modal) {
 		super(owner, modal);
 		this.setTitle(Constant.messages.getString(titleLabel));
 		this.setXWeights(0.4D, 0.6D);	// Looks a bit better..
 		this.initialize(dim, tabLabels);
+		this.hideOnSave = true;
+	}
+
+	/**
+	 * Tells whether or not the dialogue is automatically hidden when {@link #save() saved}.
+	 * <p>
+	 * The default is {@code true}.
+	 * 
+	 * @return {@code true} if the dialogue should be hidden, {@code false} otherwise.
+	 * @since TODO Add version
+	 * @see #setHideOnSave(boolean)
+	 */
+	protected boolean isHideOnSave() {
+		return hideOnSave;
+	}
+
+	/**
+	 * Sets whether or not the dialogue is automatically hidden when {@link #save() saved}.
+	 *
+	 * @param hideOnSave {@code true} if the dialogue should be hidden, {@code false} otherwise.
+	 * @since TODO Add version
+	 * @see #isHideOnSave()
+	 */
+	protected void setHideOnSave(boolean hideOnSave) {
+		this.hideOnSave = hideOnSave;
 	}
 	
 	private boolean isTabbed() {
@@ -182,37 +250,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		
 		tabbedPane = new JTabbedPane();
 
-		JButton[] extraButtons = this.getExtraButtons();
-		String helpIndex = this.getHelpIndex();
-
-		if (extraButtons == null) {
-			contentPanel.add(tabbedPane, LayoutHelper.getGBC(0, 0, 4, 1.0D, 1.0D));
-			if (helpIndex != null) {
-				contentPanel.add(getHelpButton(helpIndex), LayoutHelper.getGBC(0, 1, 1, 0.0D));
-			}
-			contentPanel.add(new JLabel(), LayoutHelper.getGBC(1, 1, 1, 1.0D));	// spacer
-			if (hasCancelSaveButtons()) {
-				contentPanel.add(getCancelButton(), LayoutHelper.getGBC(2, 1, 1, 0.0D));
-			}
-			contentPanel.add(getSaveButton(), LayoutHelper.getGBC(3, 1, 1, 0.0D));
-		} else {
-			contentPanel.add(tabbedPane, LayoutHelper.getGBC(0, 0, 4 + extraButtons.length, 1.0D, 1.0D));
-			if (helpIndex != null) {
-				contentPanel.add(getHelpButton(helpIndex), LayoutHelper.getGBC(0, 1, 1, 0.0D));
-			}
-			contentPanel.add(new JLabel(), LayoutHelper.getGBC(1, 1, 1, 1.0D));	// spacer
-			if (hasCancelSaveButtons()) {
-				contentPanel.add(getCancelButton(), LayoutHelper.getGBC(2, 1, 1, 0.0D));
-			}
-			int x=3;
-			if (extraButtons != null) {
-				for (JButton button : extraButtons) {
-					contentPanel.add(button, LayoutHelper.getGBC(x, 1, 1, 0.0D));
-					x++;
-				}
-			}
-			contentPanel.add(getSaveButton(), LayoutHelper.getGBC(x, 1, 1, 0.0D));
-		}
+		initContentPanel(contentPanel, tabbedPane, getExtraButtons(), getHelpIndex());
 
 		for (String label : tabLabels) {
 			JPanel tabPanel = new JPanel();
@@ -222,6 +260,35 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 			this.tabNameMap.put(label, tabPanel);
 			this.tabPanels.add(tabPanel);
 			this.tabOffsets.add(0);
+		}
+	}
+
+	private void initContentPanel(JPanel contentPanel, JComponent component, JButton[] extraButtons, String helpIndex) {
+		if (extraButtons == null) {
+			contentPanel.add(component, LayoutHelper.getGBC(0, 0, 4, 1.0D, 1.0D));
+			if (helpIndex != null) {
+				contentPanel.add(getHelpButton(helpIndex), LayoutHelper.getGBC(0, 1, 1, 0.0D));
+			}
+			contentPanel.add(new JLabel(), LayoutHelper.getGBC(1, 1, 1, 1.0D));	// spacer
+			if (hasCancelSaveButtons()) {
+				contentPanel.add(getCancelButton(), LayoutHelper.getGBC(2, 1, 1, 0.0D));
+			}
+			contentPanel.add(getSaveButton(), LayoutHelper.getGBC(3, 1, 1, 0.0D));
+		} else {
+			contentPanel.add(component, LayoutHelper.getGBC(0, 0, 4 + extraButtons.length, 1.0D, 1.0D));
+			if (helpIndex != null) {
+				contentPanel.add(getHelpButton(helpIndex), LayoutHelper.getGBC(0, 1, 1, 0.0D));
+			}
+			contentPanel.add(new JLabel(), LayoutHelper.getGBC(1, 1, 1, 1.0D));	// spacer
+			if (hasCancelSaveButtons()) {
+				contentPanel.add(getCancelButton(), LayoutHelper.getGBC(2, 1, 1, 0.0D));
+			}
+			int x=3;
+			for (JButton button : extraButtons) {
+				contentPanel.add(button, LayoutHelper.getGBC(x, 1, 1, 0.0D));
+				x++;
+			}
+			contentPanel.add(getSaveButton(), LayoutHelper.getGBC(x, 1, 1, 0.0D));
 		}
 	}
 	
@@ -249,37 +316,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		contentPanel.setPreferredSize(dim);
 		this.setContentPane(contentPanel);
 		
-		JButton[] extraButtons = this.getExtraButtons();
-		String helpIndex = this.getHelpIndex();
-
-		if (extraButtons == null) {
-			contentPanel.add(this.getMainPanel(), LayoutHelper.getGBC(0, 0, 4, 1.0D, 1.0D));
-			if (helpIndex != null) {
-				contentPanel.add(getHelpButton(helpIndex), LayoutHelper.getGBC(0, 1, 1, 0.0D));
-			}
-			contentPanel.add(new JLabel(), LayoutHelper.getGBC(1, 1, 1, 1.0D));	// spacer
-			if (hasCancelSaveButtons()) {
-				contentPanel.add(getCancelButton(), LayoutHelper.getGBC(2, 1, 1, 0.0D));
-			}
-			contentPanel.add(getSaveButton(), LayoutHelper.getGBC(3, 1, 1, 0.0D));
-		} else {
-			contentPanel.add(this.getMainPanel(), LayoutHelper.getGBC(0, 0, 4 + extraButtons.length, 1.0D, 1.0D));
-			if (helpIndex != null) {
-				contentPanel.add(getHelpButton(helpIndex), LayoutHelper.getGBC(0, 1, 1, 0.0D));
-			}
-			contentPanel.add(new JLabel(), LayoutHelper.getGBC(1, 1, 1, 1.0D));	// spacer
-			if (hasCancelSaveButtons()) {
-				contentPanel.add(getCancelButton(), LayoutHelper.getGBC(2, 1, 1, 0.0D));
-			}
-			int x=3;
-			if (extraButtons != null) {
-				for (JButton button : this.getExtraButtons()) {
-					contentPanel.add(button, LayoutHelper.getGBC(x, 1, 1, 0.0D));
-					x++;
-				}
-			}
-			contentPanel.add(getSaveButton(), LayoutHelper.getGBC(x, 1, 1, 0.0D));
-		}
+		initContentPanel(contentPanel, getMainPanel(), getExtraButtons(), getHelpIndex());
 	}
 	
 	public String getSaveButtonText() {
@@ -291,7 +328,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 	
 	/**
 	 * Override if you need to add extra buttons inbetween the Cancel and Save ones
-	 * @return
+	 * @return an array with the extra buttons, or {@code null} if none needed.
 	 */
 	public JButton[] getExtraButtons () {
 		return null;
@@ -314,7 +351,10 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 						return;
 					}
 					save();
-					setVisible(false);
+
+					if (isHideOnSave()) {
+						setVisible(false);
+					}
 				}
 			});
 		}
@@ -473,6 +513,56 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		incTabOffset(tabIndex);
 	}
 
+	/**
+	 * Adds a {@link JPasswordField} field, with the given label and, optionally, the given value.
+	 *
+	 * @param fieldLabel the label of the field
+	 * @param value the value of the field, might be {@code null}
+	 * @throws IllegalArgumentException if the dialogue is a tabbed dialogue
+	 * @since TODO add version
+	 * @see #addPasswordField(int, String, String)
+	 * @see #getPasswordValue(String)
+	 */
+	public void addPasswordField(String fieldLabel, String value) {
+		if (isTabbed()) {
+			throw new IllegalArgumentException("Initialised as a tabbed dialog - must use method with tab parameters");
+		}
+		JPasswordField field = new JPasswordField();
+		if (value != null) {
+			field.setText(value);
+		}
+		this.addField(fieldLabel, field, field, 0.0D);
+	}
+
+	/**
+	 * Adds a {@link JPasswordField} field to the tab with the given index, with the given label and, optionally, the given
+	 * value.
+	 *
+	 * @param tabIndex the index of the tab
+	 * @param fieldLabel the label of the field
+	 * @param value the value of the field, might be {@code null}
+	 * @throws IllegalArgumentException if the dialogue is not a tabbed dialogue or if the index does not correspond to an
+	 *			 existing tab
+	 * @since TODO add version
+	 * @see #addPasswordField(String, String)
+	 * @see #getPasswordValue(String)
+	 */
+	public void addPasswordField(int tabIndex, String fieldLabel, String value) {
+		if (!isTabbed()) {
+			throw new IllegalArgumentException("Not initialised as a tabbed dialog - must use method without tab parameters");
+		}
+		if (tabIndex < 0 || tabIndex >= this.tabPanels.size()) {
+			throw new IllegalArgumentException("Invalid tab index: " + tabIndex);
+		}
+		JPasswordField field = new JPasswordField();
+		if (value != null) {
+			field.setText(value);
+		}
+
+		this.addField(this.tabPanels.get(tabIndex), this.tabOffsets.get(tabIndex), fieldLabel, field, field, 0.0D);
+		incTabOffset(tabIndex);
+	}
+
 	public void addMultilineField(String fieldLabel, String value) {
 		if (isTabbed()) {
 			throw new IllegalArgumentException("Initialised as a tabbed dialog - must use method with tab parameters");
@@ -616,7 +706,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 	/**
 	 * Add a table field.
 	 * @param fieldLabel If null then the table will be full width
-	 * @param field
+	 * @param field the table field
 	 * @param buttons if not null then the buttons will be added to the right of the table
 	 */
 	public void addTableField(String fieldLabel, JTable field, List<JButton> buttons) {
@@ -1088,15 +1178,27 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		this.incTabOffset(tabIndex);
 	}
 
-	/*
-	 * Override to do something useful
+	/**
+	 * Notifies that a site node was selected.
+	 * <p>
+	 * By default it does nothing.
+	 * 
+	 * @param field the name of the field that triggered the selection
+	 * @param node the node selected
+	 * @see #addNodeSelectField(String, SiteNode, boolean, boolean)
 	 */
 	public void siteNodeSelected(String field, SiteNode node) {
 		
 	}
 
-	/*
-	 * Override to do something useful
+	/**
+	 * Notifies that a target was selected.
+	 * <p>
+	 * By default it does nothing.
+	 * 
+	 * @param field the name of the field that triggered the selection
+	 * @param target the target selected
+	 * @see #addTargetSelectField(int, String, Target, boolean, boolean)
 	 */
 	public void targetSelected(String field, Target target) {
 		
@@ -1104,8 +1206,8 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 
 	/**
 	 * Allow the caller to get the field component in order to, for example, change its properties
-	 * @param fieldLabel
-	 * @return
+	 * @param fieldLabel the name of the field
+	 * @return the field, or {@code null} if there's no field with the given name
 	 */
 	public Component getField(String fieldLabel) {
 		return this.fieldMap.get(fieldLabel);
@@ -1126,6 +1228,27 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		}
 		return null;
 	}
+
+	/**
+	 * Gets the contents of a {@link JPasswordField} field.
+	 * <p>
+	 * For stronger security, it is recommended that the returned character array be cleared after use by setting each character
+	 * to zero.
+	 * 
+	 * @param fieldLabel the label of the field
+	 * @return the contents of the field, {@code null} if not a {@code JPassword} field.
+	 * @since TODO add version
+	 * @see #setFieldValue(String, String)
+	 * @see #addPasswordField(String, String)
+	 */
+	public char[] getPasswordValue(String fieldLabel) {
+		Component c = this.fieldMap.get(fieldLabel);
+		if (!(c instanceof JPasswordField)) {
+			return null;
+		}
+
+		return ((JPasswordField) c).getPassword();
+	}
 	
 	public Context getContextValue(String fieldLabel) {
 		Component c = this.fieldMap.get(fieldLabel);
@@ -1139,11 +1262,35 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		return null;
 	}
 	
+	/**
+	 * Sets the (selected) context of a {@link ContextSelectComboBox} field.
+	 * <p>
+	 * The call to this method has no effect it the context is not present in the combo box.
+	 * 
+	 * @param fieldLabel the label of the field
+	 * @param context the context to be set/selected, {@code null} to clear the selection. 
+	 * @since TODO add version
+	 * @see #getContextValue(String)
+	 * @see #addContextSelectField(String, Context)
+	 */
+	public void setContextValue(String fieldLabel, Context context) {
+		Component c = this.fieldMap.get(fieldLabel);
+		if (c != null) {
+			if (c instanceof ContextSelectComboBox) {
+				((ContextSelectComboBox) c).setSelectedItem(context);
+			} else {
+				logger.error("Unrecognised field class " + fieldLabel + ": " + c.getClass().getCanonicalName());
+			}
+		}
+	}
+	
 	public void setFieldValue(String fieldLabel, String value) {
 		Component c = this.fieldMap.get(fieldLabel);
 		if (c != null) {
 			if (c instanceof ZapTextField) {
 				((ZapTextField)c).setText(value);
+			} else if (c instanceof JPasswordField) {
+				((JPasswordField)c).setText(value);
 			} else if (c instanceof ZapTextArea) {
 				((ZapTextArea)c).setText(value);
 			} else if (c instanceof JComboBox) {
@@ -1173,6 +1320,8 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 			Object value = null;
 			if (c instanceof ZapTextField) {
 				value = ((ZapTextField)c).getText();
+			} else if (c instanceof JPasswordField) {
+				return ((JPasswordField) c).getDocument().getLength() == 0;
 			} else if (c instanceof ZapTextArea) {
 				value = ((ZapTextArea)c).getText();
 			} else if (c instanceof JComboBox) {
@@ -1284,6 +1433,8 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 		if (c != null) {
 			if (c instanceof ZapTextField) {
 				((ZapTextField)c).addActionListener(listener);
+			} else if (c instanceof JPasswordField) {
+				((JPasswordField)c).addActionListener(listener);
 			} else if (c instanceof JComboBox) {
 				((JComboBox<?>)c).addActionListener(listener);
 			} else if (c instanceof JCheckBox) {
@@ -1301,6 +1452,8 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 				((ZapTextField)c).addMouseListener(listener);
 			} else if (c instanceof ZapTextArea) {
 				((ZapTextArea)c).addMouseListener(listener);
+			} else if (c instanceof JPasswordField) {
+				((JPasswordField)c).addMouseListener(listener);
 			} else if (c instanceof JComboBox) {
 				((JComboBox<?>)c).addMouseListener(listener);
 			} else {
@@ -1334,8 +1487,8 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 	/**
 	 * Set the visibility of the specified tabs.
 	 * The labels must have been used to create the tabs in the constructor
-	 * @param tabLabels
-	 * @param visible
+	 * @param tabLabels the names of the tabs
+	 * @param visible {@code true} if the tabs should be visible, {@code false} otherwise
 	 */
     public void setTabsVisible(String[] tabLabels, boolean visible) {
     	if (visible) {
@@ -1353,7 +1506,26 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
     	}
 	}
 
+	/**
+	 * Called when the dialogue is saved and after all validations have finished, to conclude the saving process.
+	 * <p>
+	 * Whether or not the dialogue is automatically hidden depends on the value returned by {@link #isHideOnSave()}.
+	 * 
+	 * @see #validateFields()
+	 * @see #validateFieldsCustomMessage()
+	 * @see #getSaveButtonText()
+	 */
 	public abstract void save();
 
+	/**
+	 * Called when the dialogue is {@link #save() saved}, allowing to validate the fields and show an error message (as opposed
+	 * to validations using the method {@link #validateFieldsCustomMessage()}, which allow to show custom/complex information or
+	 * warning dialogues).
+	 * <p>
+	 * If no message is returned (that is, {@code null}), the saving process continues, otherwise it is shown a warning dialogue
+	 * with the message.
+	 *
+	 * @return a {@code String} containing the error message to be shown to the user, or {@code null} if there are no errors.
+	 */
 	public abstract String validateFields();
 }

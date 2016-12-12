@@ -194,24 +194,8 @@ public class SpiderTask implements Runnable {
 		HttpMessage msg = null;
 		try {
 			msg = fetchResource();
-		} catch (ConnectException e) {
-			// This will have been logged at debug level with the URL (which we dont have here)
-			parent.postTaskExecution();
-			return;
-		} catch (SocketTimeoutException e) {
-			// This will have been logged at debug level with the URL (which we dont have here)
-			parent.postTaskExecution();
-			return;
-		} catch (SocketException e) {
-			// This will have been logged at debug level with the URL (which we dont have here)
-			parent.postTaskExecution();
-			return;
-		} catch (UnknownHostException e) {
-			// This will have been logged at debug level with the URL (which we dont have here)
-			parent.postTaskExecution();
-			return;
 		} catch (Exception e) {
-			log.error("An error occured while fetching the resource: " + e.getMessage(), e);
+			// The exception was already logged, in fetchResource, with the URL (which we dont have here)
 			parent.postTaskExecution();
 			return;
 		}
@@ -327,9 +311,9 @@ public class SpiderTask implements Runnable {
 	 * @return the response http message
 	 * @throws HttpException the http exception
 	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws DatabaseException
+	 * @throws DatabaseException if an error occurred while reading the HTTP message
 	 */
-	private HttpMessage fetchResource() throws HttpException, IOException, DatabaseException {
+	private HttpMessage fetchResource() throws IOException, DatabaseException {
 
 		// Build fetch the request message from the database
 		HttpMessage msg;
@@ -367,6 +351,10 @@ public class SpiderTask implements Runnable {
 				throw e;
 			} catch (UnknownHostException e) {
 				log.debug("Unknown host: " + msg.getRequestHeader().getURI(), e);
+				throw e;
+			} catch (Exception e) {
+				log.error("An error occurred while fetching the resource [" + msg.getRequestHeader().getURI() + "]: "
+							+ e.getMessage(), e);
 				throw e;
 			}
 		}

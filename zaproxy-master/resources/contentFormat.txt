@@ -1,6 +1,6 @@
 # THIS IS A COMMENT AND CAN BE IGNORED
 # FORMAT: threshold #VALUE#
-threshold 17
+threshold 16
 # FORMAT: #inappropriate string#;#weight#;#TAGS SEPARATED BY COMMA#
 trump;4;fearmongering,mysogenist,bigotry
 nigger;10;racist

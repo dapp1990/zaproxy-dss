@@ -42,6 +42,7 @@ import net.sf.json.JSONObject;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.core.proxy.ProxyParam;
 import org.parosproxy.paros.model.Model;
+import org.parosproxy.paros.network.HttpHeader;
 import org.parosproxy.paros.network.HttpInputStream;
 import org.parosproxy.paros.network.HttpMalformedHeaderException;
 import org.parosproxy.paros.network.HttpMessage;
@@ -92,6 +93,20 @@ public class API {
 		return api;
 	}
 
+	/**
+	 * Registers the given {@code ApiImplementor} to the ZAP API.
+	 * <p>
+	 * The implementor is not registed if the {@link ApiImplementor#getPrefix() API implementor prefix} is already in use.
+	 * <p>
+	 * <strong>Note:</strong> The preferred method to add an {@code ApiImplementor} is through the method
+	 * {@link org.parosproxy.paros.extension.ExtensionHook#addApiImplementor(ApiImplementor)
+	 * ExtensionHook.addApiImplementor(ApiImplementor)} when the corresponding
+	 * {@link org.parosproxy.paros.extension.Extension#hook(org.parosproxy.paros.extension.ExtensionHook) extension is hooked}.
+	 * Only use this method if really necessary.
+	 *
+	 * @param impl the implementor that will be registered
+	 * @see #removeApiImplementor(ApiImplementor)
+	 */
 	public void registerApiImplementor (ApiImplementor impl) {
 		if (implementors.get(impl.getPrefix()) != null) {
 			logger.error("Second attempt to register API implementor with prefix of " + impl.getPrefix());
@@ -107,6 +122,13 @@ public class API {
 		}
 	}
 	
+	/**
+	 * Removes the given {@code ApiImplementor} from the ZAP API.
+	 *
+	 * @param impl the implementor that will be removed
+	 * @since 2.1.0
+	 * @see #registerApiImplementor(ApiImplementor)
+	 */
 	public void removeApiImplementor(ApiImplementor impl) {
 		if (!implementors.containsKey(impl.getPrefix())) {
 			logger.warn("Attempting to remove an API implementor not registered, with prefix: " + impl.getPrefix());
@@ -180,6 +202,9 @@ public class API {
 
 		HttpMessage msg = new HttpMessage();
 		msg.setRequestHeader(requestHeader);
+		if (requestHeader.getContentLength() > 0) {
+			msg.setRequestBody(httpIn.readRequestBody(requestHeader));
+		}
 		String component = null;
 		ApiImplementor impl = null;
 		RequestType reqType = null;
@@ -289,13 +314,17 @@ public class API {
 
 					ApiResponse res;
 					switch (reqType) {
-					case action:	
-						// TODO Handle POST requests - need to read these in and then parse params from POST body
-						/*
-						if (getOptionsParamApi().isPostActions()) {
-							throw new ApiException(ApiException.Type.DISABLED);
+					case action:
+						if (requestHeader.getMethod().equalsIgnoreCase(HttpRequestHeader.POST)) {
+							String contentTypeHeader = requestHeader.getHeader(HttpHeader.CONTENT_TYPE);
+							if(contentTypeHeader != null &&
+									contentTypeHeader.equals(HttpHeader.FORM_URLENCODED_CONTENT_TYPE)) {
+								params = getParams(msg.getRequestBody().toString());
+							} else {
+								throw new ApiException(ApiException.Type.CONTENT_TYPE_NOT_SUPPORTED);
+							}
 						}
-						*/
+
 						if (key != null && key.length() > 0) {
 							// Check if the right api key has been used
 							if ( ! params.has(API_KEY_PARAM) || ! key.equals(params.getString(API_KEY_PARAM))) {
@@ -421,12 +450,12 @@ public class API {
 	
 	/**
 	 * Returns a URI for the specified parameters. The API key will be added if required
-	 * @param format
-	 * @param prefix
-	 * @param type
-	 * @param name
+	 * @param format the format of the API response
+	 * @param prefix the prefix of the API implementor
+	 * @param type the request type
+	 * @param name the name of the endpoint
 	 * @param proxy if true then the URI returned will only work if proxying via ZAP, ie it will start with http://zap/..
-	 * @return
+	 * @return the URL to access the defined endpoint
 	 */
 	public String getBaseURL(API.Format format, String prefix, API.RequestType type, String name, boolean proxy) {
 		String key = this.getApiKey();
@@ -544,17 +573,31 @@ public class API {
     }
 
     public static String getDefaultResponseHeader(String contentType, int contentLength) {
-        return getDefaultResponseHeader(STATUS_OK, contentType, contentLength);
+        return getDefaultResponseHeader(STATUS_OK, contentType, contentLength, false);
+    }
+
+    public static String getDefaultResponseHeader(String contentType, int contentLength, boolean canCache) {
+        return getDefaultResponseHeader(STATUS_OK, contentType, contentLength, canCache);
     }
 
     public static String getDefaultResponseHeader(String responseStatus, String contentType, int contentLength) {
+    	return getDefaultResponseHeader(responseStatus, contentType, contentLength, false);
+    }
+
+    public static String getDefaultResponseHeader(String responseStatus, String contentType, int contentLength, boolean canCache) {
         StringBuilder sb = new StringBuilder(250);
 
         sb.append("HTTP/1.1 ").append(responseStatus).append("\r\n");
-        sb.append("Pragma: no-cache\r\n");
-        sb.append("Cache-Control: no-cache\r\n");
+        if (! canCache) {
+        	sb.append("Pragma: no-cache\r\n");
+        	sb.append("Cache-Control: no-cache\r\n");
+        }
+        sb.append("Content-Security-Policy: default-src 'none'; script-src 'self'; connect-src 'self'; child-src 'self'; img-src 'self' data:; font-src 'self' data:; style-src 'self'\r\n");
         sb.append("Access-Control-Allow-Methods: GET,POST,OPTIONS\r\n");
         sb.append("Access-Control-Allow-Headers: ZAP-Header\r\n");
+        sb.append("X-Frame-Options: DENY\r\n");
+        sb.append("X-XSS-Protection: 1; mode=block\r\n");
+        sb.append("X-Content-Type-Options: nosniff\r\n");
         sb.append("X-Clacks-Overhead: GNU Terry Pratchett\r\n");
         sb.append("Content-Length: ").append(contentLength).append("\r\n");
         sb.append("Content-Type: ").append(contentType).append("\r\n");

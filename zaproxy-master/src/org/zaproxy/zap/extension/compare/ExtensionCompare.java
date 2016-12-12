@@ -62,26 +62,8 @@ public class ExtensionCompare extends ExtensionAdaptor implements SessionChanged
 
     private static Logger log = Logger.getLogger(ExtensionCompare.class);
 
-	/**
-     * 
-     */
     public ExtensionCompare() {
-        super();
- 		initialize();
-    }
-
-    /**
-     * @param name
-     */
-    public ExtensionCompare(String name) {
-        super(name);
-    }
-
-	/**
-	 * This method initializes this
-	 */
-	private void initialize() {
-        this.setName("ExtensionCompare");
+        super("ExtensionCompare");
         this.setOrder(44);
 	}
 	

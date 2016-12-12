@@ -82,7 +82,6 @@ import org.zaproxy.zap.control.AddOnRunIssuesUtils;
 import org.zaproxy.zap.control.AddOnUninstallationProgressCallback;
 import org.zaproxy.zap.control.ExtensionFactory;
 import org.zaproxy.zap.control.ZapRelease;
-import org.zaproxy.zap.extension.api.API;
 import org.zaproxy.zap.extension.autoupdate.AddOnDependencyChecker.AddOnChangesResult;
 import org.zaproxy.zap.extension.autoupdate.AddOnDependencyChecker.UninstallationResult;
 import org.zaproxy.zap.extension.autoupdate.UninstallationProgressDialogue.AddOnUninstallListener;
@@ -152,9 +151,6 @@ public class ExtensionAutoUpdate extends ExtensionAdaptor implements CheckForUpd
     							ARG_CFU_LIST_IDX};
 	private CommandLineArgument[] arguments = new CommandLineArgument[ARG_IDXS.length];
 
-    /**
-     * 
-     */
     public ExtensionAutoUpdate() {
         super();
  		initialize();
@@ -272,7 +268,27 @@ public class ExtensionAutoUpdate extends ExtensionAdaptor implements CheckForUpd
 		AddOnDependencyChecker dependencyChecker = new AddOnDependencyChecker(getLocalVersionInfo(), latestVersionInfo == null
 				? getLocalVersionInfo()
 				: latestVersionInfo);
-		AddOnChangesResult result = dependencyChecker.calculateInstallChanges(ao);
+
+		boolean update = false;
+		AddOnChangesResult result;
+		AddOn installedAddOn = getLocalVersionInfo().getAddOn(ao.getId());
+		if (installedAddOn != null) {
+			if (!ao.isUpdateTo(installedAddOn)) {
+				View.getSingleton().showWarningDialog(
+						MessageFormat.format(
+								Constant.messages.getString("cfu.warn.addOnOlderVersion"),
+								installedAddOn.getFileVersion(),
+								View.getSingleton().getStatusUI(installedAddOn.getStatus()).toString(),
+								ao.getFileVersion(),
+								View.getSingleton().getStatusUI(ao.getStatus()).toString()));
+				return;
+			}
+
+			result = dependencyChecker.calculateUpdateChanges(ao);
+			update = true;
+		} else {
+			result = dependencyChecker.calculateInstallChanges(ao);
+		}
 
 		if (result.getOldVersions().isEmpty() && result.getUninstalls().isEmpty()) {
 			AddOnRunRequirements reqs = ao.calculateRunRequirements(getLocalVersionInfo().getAddOns());
@@ -290,11 +306,20 @@ public class ExtensionAutoUpdate extends ExtensionAdaptor implements CheckForUpd
 			return;
 		}
 
-		if (!dependencyChecker.confirmInstallChanges(getView().getMainFrame(), result)) {
-			return;
+		if (update) {
+			if (!dependencyChecker.confirmUpdateChanges(getView().getMainFrame(), result)) {
+				return;
+			}
+			// The new version of the add-on is installed manually
+			result.getNewVersions().remove(ao);
+		} else {
+			if (!dependencyChecker.confirmInstallChanges(getView().getMainFrame(), result)) {
+				return;
+			}
+			// The add-on is installed manually
+			result.getInstalls().remove(ao);
 		}
 		
-		result.getInstalls().remove(ao);
 		processAddOnChanges(getView().getMainFrame(), result);
 		installLocalAddOn(ao);
 	}
@@ -511,7 +536,7 @@ public class ExtensionAutoUpdate extends ExtensionAdaptor implements CheckForUpd
 	    extensionHook.addCommandLine(getCommandLineArguments());
         this.api = new AutoUpdateAPI(this);
         this.api.addApiOptions(getModel().getOptionsParam().getCheckForUpdatesParam());
-        API.getInstance().registerApiImplementor(this.api);
+        extensionHook.addApiImplementor(this.api);
 	}
 	
 	private ScanStatus getScanStatus() {
@@ -579,9 +604,6 @@ public class ExtensionAutoUpdate extends ExtensionAdaptor implements CheckForUpd
     	return (int) (diff / (1000 * 60 * 60 * 24));
     }
     
-    /*
-     * 
-     */
     public void alertIfNewVersions() {
     	// Kicks off a thread and pops up a window if there are new versions.
     	// Depending on the options the user has chosen.

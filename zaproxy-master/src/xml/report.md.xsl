@@ -42,13 +42,13 @@
 <xsl:template match="imagestatistics">
 ## Image statistics of site <xsl:value-of select="site"/>
 
-| Image type statistics |
+| |Image type statistics |
 | --- | --- |
 | jpeg | <xsl:value-of select="filetypes/jpeg"/> |
 | png | <xsl:value-of select="filetypes/png"/> |
 | gif | <xsl:value-of select="filetypes/gif"/> |
 
-| File size statistics |
+| |File size statistics |
 | --- | --- |
 | Minimun | <xsl:value-of select="filesize/min"/> |
 | Minimun URL | <xsl:value-of select="filesize/minurl"/> |
@@ -57,7 +57,7 @@
 | Medium | <xsl:value-of select="filetypes/med"/> |
 | Average | <xsl:value-of select="filesize/avg"/> |
 
-| Image width statistics |
+| |Image width statistics |
 | --- | --- |
 | Minimun | <xsl:value-of select="filewidth/min"/> |
 | Minimun URL | <xsl:value-of select="filewidth/minurl"/> |
@@ -66,7 +66,7 @@
 | Medium | <xsl:value-of select="filewidth/med"/> |
 | Average | <xsl:value-of select="filewidth/avg"/> |
 
-| Image height statistics |
+| |Image height statistics |
 | --- | --- |
 | Minimun | <xsl:value-of select="fileheight/min"/> |
 | Minimun URL | <xsl:value-of select="fileheight/minurl"/> |

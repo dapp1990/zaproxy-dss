@@ -59,6 +59,12 @@
 // ZAP: 2016/05/04 Changes to address issues related to ParameterParser
 // ZAP: 2016/05/10 Use empty String for (URL) parameters with no value
 // ZAP: 2016/05/24 Call Database.discardSession(long) in Session.discard()
+// ZAP: 2016/06/10 Do not clean up the database if the current session does not require it
+// ZAP: 2016/07/05 Issue 2218: Persisted Sessions don't save unconfigured Default Context
+// ZAP: 2016/08/25 Detach sites tree model when loading the session
+// ZAP: 2016/08/29 Issue 2736: Can't generate reports from saved Session data
+// ZAP: 2016/10/24 Delay addition of imported context until it's known that it has no errors
+// ZAP: 2016/10/26 Issue 1952: Do not allow Contexts with same name
 
 package org.parosproxy.paros.model;
 
@@ -94,6 +100,7 @@ import org.zaproxy.zap.control.ExtensionFactory;
 import org.zaproxy.zap.extension.ascan.ExtensionActiveScan;
 import org.zaproxy.zap.extension.spider.ExtensionSpider;
 import org.zaproxy.zap.model.Context;
+import org.zaproxy.zap.model.IllegalContextNameException;
 import org.zaproxy.zap.model.NameValuePair;
 import org.zaproxy.zap.model.ParameterParser;
 import org.zaproxy.zap.model.StandardParameterParser;
@@ -158,8 +165,6 @@ public class Session {
 		this.model = model;
 		
 		discardContexts();
-		// Always start with one context
-	    getNewContext(Constant.messages.getString("context.default.name"));
 	    
 	    Stats.clearAll();
 
@@ -278,11 +283,16 @@ public class Session {
 		} else {
 			this.setSessionId(Long.parseLong(fileName));
 		}
-		model.getDb().close(false);
+		model.getDb().close(false, isCleanUpRequired());
 		model.getDb().open(fileName);
 		this.fileName = fileName;
 		
 		//historyList.removeAllElements();
+
+		if (View.isInitialised()) {
+			// Detach the siteTree model from the Sites tree, to reduce notification changes to the UI while loading
+			View.getSingleton().getSiteTreePanel().getTreeSite().setModel(new SiteMap(null, null));
+		}
 
     	if (! Constant.isLowMemoryOptionSet()) {
 			SiteNode newRoot = new SiteNode(siteTree, -1, Constant.messages.getString("tab.sites"));
@@ -349,7 +359,8 @@ public class Session {
 		
 		// update siteTree reference
 		list = model.getDb().getTableHistory().getHistoryIdsOfHistType(getSessionId(), HistoryReference.TYPE_SPIDER,
-				HistoryReference.TYPE_BRUTE_FORCE, HistoryReference.TYPE_SPIDER_AJAX);
+				HistoryReference.TYPE_BRUTE_FORCE, HistoryReference.TYPE_SPIDER_AJAX,
+				HistoryReference.TYPE_SCANNER);
 		
 		for (int i=0; i<list.size(); i++) {
 			// ZAP: Removed unnecessary cast.
@@ -371,6 +382,8 @@ public class Session {
 				} else {
 					getSiteTree().addPath(historyRef);
 				}
+
+				historyRef.loadAlerts();
 
 				if (i % 100 == 99) Thread.yield();
 
@@ -461,7 +474,7 @@ public class Session {
 		}
 		
 		if (View.isInitialised()) {
-		    // ZAP: expand root
+		    View.getSingleton().getSiteTreePanel().getTreeSite().setModel(siteTree);
 		    View.getSingleton().getSiteTreePanel().expandRoot();
 		}
 	    this.refreshScope();
@@ -470,6 +483,25 @@ public class Session {
 		System.gc();
 	}
 	
+	/**
+	 * Tells whether or not the session requires a clean up (for example, to remove temporary messages).
+	 * <p>
+	 * The session requires a clean up if it's not a new session or, if it is, the database used is not HSQLDB (file based).
+	 *
+	 * @return {@code true} if a clean up is required, {@code false} otherwise.
+	 */
+	boolean isCleanUpRequired() {
+		if (!isNewState()) {
+			return true;
+		}
+
+		if (Database.DB_TYPE_HSQLDB.equals(model.getDb().getType())) {
+			return false;
+		}
+
+		return true;
+	}
+
 	private List<String> sessionUrlListToStingList(List<RecordSessionUrl> rsuList) {
 	    List<String> urlList = new ArrayList<>(rsuList.size());
 	    for (RecordSessionUrl url : rsuList) {
@@ -1149,14 +1181,71 @@ public class Session {
 		}
 	}
 	
+	/**
+	 * Gets a newly created context with the given name.
+	 * <p>
+	 * The context is automatically added to the session.
+	 *
+	 * @param name the name of the context
+	 * @return the new {@code Context}.
+	 * @throws IllegalContextNameException (since TODO add version) if the given name is {@code null} or empty or if a context
+	 *             with the given name already exists.
+	 */
 	public Context getNewContext(String name) {
-		Context c = new Context(this, this.nextContextIndex++);
-		c.setName(name);
+		validateContextName(name);
+		Context c = createContext(name);
 		this.addContext(c);
 		return c;
 	}
 
+	/**
+	 * Creates a new context with the given name.
+	 *
+	 * @param name the name of the context
+	 * @return the new {@code Context}.
+	 * @see #getNewContext(String)
+	 */
+	private Context createContext(String name) {
+		Context context = new Context(this, this.nextContextIndex++);
+		context.setName(name);
+		return context;
+	}
+
+	/**
+	 * Validates the given name is not {@code null} nor empty and that no context already exists with the given name.
+	 *
+	 * @param name the name to be validated
+	 * @throws IllegalContextNameException if the given name is {@code null} or empty or if a context with the given name
+	 *             already exists.
+	 */
+	private void validateContextName(String name) {
+		if (name == null || name.isEmpty()) {
+			throw new IllegalContextNameException(
+					IllegalContextNameException.Reason.EMPTY_NAME,
+					"The context name must not be null nor empty.");
+		}
+
+		if (getContext(name) != null) {
+			throw new IllegalContextNameException(
+					IllegalContextNameException.Reason.DUPLICATED_NAME,
+					"A context with the given name [" + name + "] already exists.");
+		}
+	}
+
+	/**
+	 * Adds the given context.
+	 *
+	 * @param c the context to be added
+	 * @throws IllegalArgumentException (since TODO add version) if the given context is {@code null}.
+	 * @throws IllegalContextNameException (since TODO add version) if context's name is {@code null} or empty or if a context
+	 *             with the same name already exists.
+	 */
 	public void addContext(Context c) {
+		if (c == null) {
+			throw new IllegalArgumentException("The context must not be null. ");
+		}
+		validateContextName(c.getName());
+
 		this.contexts.add(c);
 		this.model.loadContext(c);
 
@@ -1269,9 +1358,10 @@ public class Session {
 	}
 
 	/**
-	 * Import a context from the specified file
-	 * @param file
-	 * @return
+	 * Imports a context from the specified (XML) file.
+	 * 
+	 * @param file the (XML) file that contains the context data
+	 * @return the imported {@code Context}, already added to the session.
 	 * @throws ConfigurationException
 	 * @throws ClassNotFoundException
 	 * @throws InstantiationException
@@ -1280,11 +1370,16 @@ public class Session {
 	 * @throws InvocationTargetException
 	 * @throws NoSuchMethodException
 	 * @throws SecurityException
+	 * @throws IllegalContextNameException (since TODO add version) if context's name is not provided or it's empty or if a
+	 *             context with the same name already exists.
 	 */
 	public Context importContext (File file) throws ConfigurationException, ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		ZapXmlConfiguration config = new ZapXmlConfiguration(file);
 		
-		Context c = this.getNewContext(config.getString(Context.CONTEXT_CONFIG_NAME));
+		String name = config.getString(Context.CONTEXT_CONFIG_NAME);
+		validateContextName(name);
+
+		Context c = createContext(name);
 
 		c.setDescription(config.getString(Context.CONTEXT_CONFIG_DESC));
 		c.setInScope(config.getBoolean(Context.CONTEXT_CONFIG_INSCOPE));
@@ -1343,7 +1438,8 @@ public class Session {
 		
 		c.restructureSiteTree();
 		
-		Model.getSingleton().getSession().saveContext(c);
+		addContext(c);
+		saveContext(c);
 		return c;
 	}
 

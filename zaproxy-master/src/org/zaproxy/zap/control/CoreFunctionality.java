@@ -102,6 +102,7 @@ public final class CoreFunctionality {
 			extensions.add(new org.zaproxy.zap.extension.params.ExtensionParams());
 			extensions.add(new org.zaproxy.zap.extension.pscan.ExtensionPassiveScan());
 			extensions.add(new org.zaproxy.zap.extension.imgreport.ExtensionImageReport()); // ExtensionImageReport implemented as core functionality
+			extensions.add(new org.zaproxy.zap.extension.ruleconfig.ExtensionRuleConfig());
 			extensions.add(new org.zaproxy.zap.extension.script.ExtensionScript());
 			extensions.add(new org.zaproxy.zap.extension.search.ExtensionSearch());
 			extensions.add(new org.zaproxy.zap.extension.sessions.ExtensionSessionManagement());

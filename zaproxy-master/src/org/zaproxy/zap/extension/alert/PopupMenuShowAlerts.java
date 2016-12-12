@@ -37,7 +37,9 @@ public class PopupMenuShowAlerts extends PopupMenuHistoryReferenceContainer {
 	private static final long serialVersionUID = 1L;
 
     /**
-     * @param label
+     * Constructs a {@code PopupMenuShowAlerts} with the given label.
+     * 
+     * @param label the text shown in the pop up menu
      */
     public PopupMenuShowAlerts(String label) {
         super(label);
@@ -58,9 +60,11 @@ public class PopupMenuShowAlerts extends PopupMenuHistoryReferenceContainer {
 
 	@Override
     public boolean isButtonEnabledForHistoryReference (HistoryReference href) {
-		List<Alert> alerts = href.getAlerts();
+		List<Alert> alerts;
 		if (href.getSiteNode() != null) {
 			alerts = href.getSiteNode().getAlerts();
+		} else {
+			alerts = href.getAlerts();
 		}
 		URI hrefURI = href.getURI();
 		List<PopupMenuShowAlert> alertList = new ArrayList<>(alerts.size()); 

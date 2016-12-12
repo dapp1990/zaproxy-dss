@@ -42,6 +42,9 @@
 // ZAP: 2016/04/12 Update the SiteNode when deleting alerts
 // ZAP: 2016/05/27 Moved the temporary types to this class
 // ZAP: 2016/05/30 Add new type for CONNECT requests received by the proxy
+// ZAP: 2016/06/15 Add TYPE_SEQUENCE_TEMPORARY
+// ZAP: 2016/06/20 Add TYPE_ZEST_SCRIPT and deprecate TYPE_RESERVED_11
+// ZAP: 2016/08/30 Use a Set instead of a List for the alerts
 
 package org.parosproxy.paros.model;
 
@@ -122,7 +125,24 @@ public class HistoryReference {
    public static final int TYPE_AUTHENTICATION = 11;
    // ZAP: Added TYPE_ACCESS_CONTROL for use in access control testing methods
    public static final int TYPE_ACCESS_CONTROL = 13;
-   public static final int TYPE_RESERVED_11 = 12;	// Reserved by Psiinon
+
+    /**
+     * A HTTP message sent by a Zest script.
+     * <p>
+     * Not all HTTP messages sent by Zest scripts will have this type, some might use the type(s) of the underlying component
+     * (for example, Zest Active Rules will use the types of the active scanner, {@link #TYPE_SCANNER_TEMPORARY} or
+     * {@link #TYPE_SCANNER}).
+     * 
+     * @since TODO add version
+     */
+    public static final int TYPE_ZEST_SCRIPT = 12;
+
+    /**
+     * @deprecated (TODO add version) Use {@link #TYPE_ZEST_SCRIPT} instead.
+     * @since 2.1.0
+     */
+    @Deprecated
+    public static final int TYPE_RESERVED_11 = TYPE_ZEST_SCRIPT;
 
     /**
      * A (temporary) HTTP message sent by the (active) scanner.
@@ -148,6 +168,7 @@ public class HistoryReference {
      * <li>{@link #TYPE_SCANNER_TEMPORARY};</li>
      * <li>{@link #TYPE_AUTHENTICATION};</li>
      * <li>{@link #TYPE_SPIDER_TASK};</li>
+     * <li>{@link #TYPE_SEQUENCE_TEMPORARY};</li>
      * </ul>
      * <p>
      * Persisted messages with temporary types are deleted when the session is closed.
@@ -167,6 +188,14 @@ public class HistoryReference {
      */
     public static final int TYPE_PROXY_CONNECT = 16;
 
+    /**
+     * A (temporary) HTTP message created/used when active scanning sequences.
+     * 
+     * @since TODO add version
+     * @see #DEFAULT_TEMPORARY_HISTORY_TYPES
+     */
+    public static final int TYPE_SEQUENCE_TEMPORARY = 17;
+
    private static java.text.DecimalFormat decimalFormat = new java.text.DecimalFormat("##0.###");
 	private static TableHistory staticTableHistory = null;
 	// ZAP: Support for multiple tags
@@ -180,6 +209,7 @@ public class HistoryReference {
 		defaultHistoryTypes.add(Integer.valueOf(HistoryReference.TYPE_SCANNER_TEMPORARY));
 		defaultHistoryTypes.add(Integer.valueOf(HistoryReference.TYPE_AUTHENTICATION));
 		defaultHistoryTypes.add(Integer.valueOf(HistoryReference.TYPE_SPIDER_TASK));
+		defaultHistoryTypes.add(Integer.valueOf(HistoryReference.TYPE_SEQUENCE_TEMPORARY));
 		DEFAULT_TEMPORARY_HISTORY_TYPES = Collections.unmodifiableSet(defaultHistoryTypes);
 
 		TEMPORARY_HISTORY_TYPES.addAll(DEFAULT_TEMPORARY_HISTORY_TYPES);
@@ -196,7 +226,7 @@ public class HistoryReference {
 	private ArrayList<Boolean> clearIfManual = null;
 	
 	// ZAP: Support for linking Alerts to Hrefs
-	private List<Alert> alerts;
+	private Set<Alert> alerts;
 	
 	private List<String> tags = new ArrayList<>();
 	private boolean webSocketUpgrade;
@@ -456,27 +486,19 @@ public class HistoryReference {
    public synchronized boolean addAlert(Alert alert) {
 	   //If this is the first alert
 	   if (alerts == null) {
-		   alerts = new ArrayList<>(1);
+		   alerts = new HashSet<>();
 	   }
 	   
-	   boolean add = true;
-	   
-	   for (Alert a : alerts) {
-		   if (alert.equals(a)) {
-			   // We've already recorded it
-				add = false;
-		   }
-	   }
-	   if (add) {
-		   this.alerts.add(alert);
+	   boolean added = false;
+	   if (alerts.add(alert)) {
 		   alert.setHistoryRef(this);
+		   added = true;
 	   }
 	   // Try to add to the SiteHNode anyway - that will also check if its already added
 	   if (this.siteNode != null) {
 		   siteNode.addAlert(alert);
-	   } else {
 	   }
-	   return add;
+	   return added;
    }
    
    public synchronized void updateAlert(Alert alert) {
@@ -514,6 +536,37 @@ public class HistoryReference {
         }
     }
 
+    /**
+     * Tells whether or not this history reference has the given alert.
+     *
+     * @param alert the alert to check
+     * @return {@code true} if it has the given alert, {@code false} otherwise.
+     * @since TODO add version
+     * @see #hasAlerts()
+     * @see #addAlert(Alert)
+     */
+    public synchronized boolean hasAlert(Alert alert) {
+        if (alerts == null) {
+            return false;
+        }
+        return alerts.contains(alert);
+    }
+
+    /**
+     * Tells whether or not this history reference has alerts.
+     *
+     * @return {@code true} if it has alerts, {@code false} otherwise.
+     * @since TODO add version
+     * @see #hasAlert(Alert)
+     * @see #addAlert(Alert)
+     */
+    public synchronized boolean hasAlerts() {
+        if (alerts == null) {
+            return false;
+        }
+        return !alerts.isEmpty();
+    }
+
    public int getHighestAlert() {
 	   int i = -1;
 	   //If there are no alerts
@@ -529,18 +582,21 @@ public class HistoryReference {
    }
    
    	/**
-	 * Gets the alerts. If alerts where never added, an empty list will be returned. This list
-	 * should be used as "read-only", not modifying content in the {@link HistoryReference} through
-	 * it.
+	 * Gets the alerts.
+	 * <p>
+	 * If alerts where never added, an unmodifiable empty list is returned, otherwise it's returned a copy of the internal
+	 * collection.
 	 * 
 	 * @return the alerts
+	 * @see #addAlert(Alert)
+	 * @see #hasAlerts()
+	 * @see #hasAlert(Alert)
 	 */
-   public List<Alert> getAlerts() {
-	   if (alerts != null) {
-		   return this.alerts;
-	   } else {
-		   return Collections.emptyList();
+   public synchronized List<Alert> getAlerts() {
+	   if (alerts == null) {
+	       return Collections.emptyList();
 	   }
+	   return new ArrayList<>(this.alerts);
    }
 
 	public String getMethod() {

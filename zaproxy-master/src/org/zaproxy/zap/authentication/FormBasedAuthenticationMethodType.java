@@ -28,7 +28,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
@@ -155,28 +154,28 @@ public class FormBasedAuthenticationMethodType extends AuthenticationMethodType 
 		 * in the request URI and the POST data, if any.
 		 * 
 		 * @param credentials the credentials
-		 * @throws SQLException
-		 * @throws HttpMalformedHeaderException
-		 * @throws UnsupportedEncodingException
+		 * @return the HTTP message prepared for authentication
+		 * @throws URIException if failed to create the request URI
+		 * @throws HttpMalformedHeaderException if the constructed HTTP request is malformed
+		 * @throws DatabaseException if an error occurred while reading the request from database
 		 */
 		private HttpMessage prepareRequestMessage(UsernamePasswordAuthenticationCredentials credentials)
-				throws URIException, NullPointerException, HttpMalformedHeaderException, DatabaseException,
-				UnsupportedEncodingException {
+				throws URIException, HttpMalformedHeaderException, DatabaseException {
 
 			// Replace the username and password in the uri
 			String requestURL = loginRequestURL.replace(MSG_USER_PATTERN,
-					URLEncoder.encode(credentials.getUsername(), ENCODING));
+					encodeParameter(credentials.getUsername()));
 			requestURL = requestURL.replace(MSG_PASS_PATTERN,
-					URLEncoder.encode(credentials.getPassword(), ENCODING));
+					encodeParameter(credentials.getPassword()));
 			URI requestURI = new URI(requestURL, false);
 
 			// Replace the username and password in the post data of the request, if needed
 			String requestBody = null;
 			if (loginRequestBody != null && !loginRequestBody.isEmpty()) {
 				requestBody = loginRequestBody.replace(MSG_USER_PATTERN,
-						URLEncoder.encode(credentials.getUsername(), ENCODING));
+						encodeParameter(credentials.getUsername()));
 				requestBody = requestBody.replace(MSG_PASS_PATTERN,
-						URLEncoder.encode(credentials.getPassword(), ENCODING));
+						encodeParameter(credentials.getPassword()));
 			}
 
 			// Prepare the actual message, either based on the existing one, or create a new one
@@ -201,6 +200,15 @@ public class FormBasedAuthenticationMethodType extends AuthenticationMethodType 
 			}
 
 			return requestMessage;
+		}
+
+		private static String encodeParameter(String parameter) {
+			try {
+				return URLEncoder.encode(parameter, ENCODING);
+			} catch (UnsupportedEncodingException ignore) {
+				// UTF-8 is one of the standard charsets (see StandardCharsets.UTF_8).
+			}
+			return "";
 		}
 
 		@Override
@@ -266,16 +274,18 @@ public class FormBasedAuthenticationMethodType extends AuthenticationMethodType 
 		 * Sets the login request as being an existing SiteNode.
 		 * 
 		 * @param loginSiteNode the new login request
+		 * @throws Exception if an error occurred while obtaining the message from the node
 		 */
 		public void setLoginRequest(SiteNode loginSiteNode) throws Exception {
 			this.loginSiteNode = loginSiteNode;
 
 			HttpMessage requestMessage = loginSiteNode.getHistoryReference().getHttpMessage();
 			this.loginRequestURL = requestMessage.getRequestHeader().getURI().toString();
-			if (requestMessage.getRequestHeader().getMethod() != HttpRequestHeader.GET)
+			if (!requestMessage.getRequestHeader().getMethod().equalsIgnoreCase(HttpRequestHeader.GET)) {
 				this.loginRequestBody = requestMessage.getRequestBody().toString();
-			else
+			} else {
 				this.loginRequestBody = null;
+			}
 		}
 
 		/**

@@ -5,6 +5,8 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/24/badge)](https://bestpractices.coreinfrastructure.org/projects/24)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/5559/badge.svg)](https://scan.coverity.com/projects/zaproxy-zaproxy)
 [![Github Releases](https://img.shields.io/github/downloads/zaproxy/zaproxy/latest/total.svg?maxAge=2592000)](https://zapbot.github.io/zap-mgmt-scripts/downloads.html)
+[![OWASP Flagship](https://img.shields.io/badge/owasp-flagship-brightgreen.svg)](https://www.owasp.org/index.php/OWASP_Project_Inventory#tab=Flagship_Projects)
+[![ToolsWatch Rank 1](https://www.toolswatch.org/badges/toptools/rank1_2015.svg)](http://www.toolswatch.org/2016/02/2015-top-security-tools-as-voted-by-toolswatch-org-readers/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/zaproxy.svg?style=social&label=Follow&maxAge=2592000)](https://twitter.com/zaproxy)
 
 The OWASP Zed Attack Proxy (ZAP) is one of the world’s most popular free security tools and is actively maintained by hundreds of international volunteers[*](#justification). It can help you automatically find security vulnerabilities in your web applications while you are developing and testing your applications. Its also a great tool for experienced pentesters to use for manual security testing.
@@ -17,16 +19,16 @@ The OWASP Zed Attack Proxy (ZAP) is one of the world’s most popular free secur
 For general information about ZAP:
   * [Home page](https://www.owasp.org/index.php/ZAP) - the official ZAP page on the OWASP wiki (includes a donate button;)
   * [Twitter](https://twitter.com/zaproxy)	- official ZAP announcements (low volume)
-  * [Blog](http://zaproxy.blogspot.co.uk/)	- official ZAP blog
+  * [Blog](https://zaproxy.blogspot.com/)	- official ZAP blog
   * [Monthly Newsletters](https://github.com/zaproxy/zaproxy/wiki/Newsletters) - ZAP news, tutorials, 3rd party tools and featured contributors
   * [Swag!](https://github.com/zaproxy/zap-swag) - official ZAP swag that you can buy, as well as all of the original artwork released under the CC License
 
 For help using ZAP:
-  * [Getting Started Guide (pdf)](https://github.com/zaproxy/zaproxy/releases/download/2.4.0/ZAPGettingStartedGuide-2.4.pdf) - an introductory guide you can print
+  * [Getting Started Guide (pdf)](https://github.com/zaproxy/zaproxy/releases/download/2.5.0/ZAPGettingStartedGuide-2.5.pdf) - an introductory guide you can print
   * [Tutorial Videos](https://www.youtube.com/playlist?list=PLEBitBW-Hlsv8cEIUntAO8st2UGhmrjUB)
   * [Frequently Asked Questions](https://github.com/zaproxy/zaproxy/wiki/FAQtoplevel)
   * [User Guide](https://github.com/zaproxy/zap-core-help/wiki) - online version of the User Guide included with ZAP
-  * [User Group](http://groups.google.com/group/zaproxy-users) - ask questions about using ZAP
+  * [User Group](https://groups.google.com/group/zaproxy-users) - ask questions about using ZAP
   * IRC: irc.mozilla.org #websectools (eg [using Mibbit](http://chat.mibbit.com/?server=irc.mozilla.org%3A%2B6697&channel=%23websectools)) - chat with core ZAP developers (European office hours usually best)
   * [Add-ons](https://github.com/zaproxy/zap-extensions/wiki) - help for the optional add-ons you can install
   * [StackOverflow](https://stackoverflow.com/questions/tagged/zap) - because some people use this for everything ;)
@@ -34,7 +36,7 @@ For help using ZAP:
 To learn more about ZAP development:
   * [Source Code](https://github.com/zaproxy) - for all of the ZAP related projects
   * [Wiki](https://github.com/zaproxy/zaproxy/wiki/Introduction) - lots of detailed info
-  * [Developer Group](http://groups.google.com/group/zaproxy-develop) - ask questions about the ZAP internals
+  * [Developer Group](https://groups.google.com/group/zaproxy-develop) - ask questions about the ZAP internals
   * [Crowdin (GUI)](https://crowdin.com/project/owasp-zap) - help translate the ZAP GUI
   * [Crowdin (User Guide)](https://crowdin.com/project/owasp-zap-help) - help translate the ZAP User Guide
   * [OpenHub](https://www.openhub.net/p/zaproxy)	- FOSS analytics

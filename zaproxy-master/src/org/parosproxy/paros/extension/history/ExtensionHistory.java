@@ -67,6 +67,8 @@
 // ZAP: 2016/04/05 Issue 2458: Fix xlint warning messages 
 // ZAP: 2016/05/20 Moved purge method to here from PopupMenuPurgeSites
 // ZAP: 2016/05/30 Issue 2494: ZAP Proxy is not showing the HTTP CONNECT Request in history tab
+// ZAP: 2016/06/20 Removed unnecessary/unused constructor
+// ZAP: 2016/06/21 Prevent deadlock between EDT and threads adding messages to the History tab
 
 package org.parosproxy.paros.extension.history;
 
@@ -150,26 +152,8 @@ public class ExtensionHistory extends ExtensionAdaptor implements SessionChanged
 	private Logger logger = Logger.getLogger(ExtensionHistory.class);
 
 
-    /**
-     * 
-     */
     public ExtensionHistory() {
-        super();
- 		initialize();
-    }
-
-    /**
-     * @param name
-     */
-    public ExtensionHistory(String name) {
-        super(name);
-    }
-
-	/**
-	 * This method initializes this
-	 */
-	private void initialize() {
-        this.setName(NAME);
+        super(NAME);
         this.setOrder(16);
 
 	}
@@ -400,16 +384,12 @@ public class ExtensionHistory extends ExtensionAdaptor implements SessionChanged
         if (!View.isInitialised() || EventQueue.isDispatchThread()) {
             historyTableModel.addHistoryReference(ref);
         } else {
-            try {
-                EventQueue.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        addHistoryInEventQueue(ref);
-                    }
-                });
-            } catch (final Exception e) {
-                logger.error(e.getMessage(), e);
-            }
+            EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    addHistoryInEventQueue(ref);
+                }
+            });
         }
     }
 

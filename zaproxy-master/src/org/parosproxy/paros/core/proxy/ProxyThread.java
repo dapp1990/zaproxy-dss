@@ -60,6 +60,8 @@
 // ZAP: 2016/04/14 Delay the write of response to not attempt to write a response again when handling IOException
 // ZAP: 2016/04/29 Adjust exception logging levels and log when timeouts happen
 // ZAP: 2016/05/30 Issue 2494: ZAP Proxy is not showing the HTTP CONNECT Request in history tab
+// ZAP: 2016/06/13 Remove all unsupported encodings (instead of just some)
+// ZAP: 2016/09/22 JavaDoc tweaks
 
 package org.parosproxy.paros.core.proxy;
 
@@ -101,6 +103,7 @@ import org.zaproxy.zap.ZapGetMethod;
 import org.zaproxy.zap.extension.api.API;
 import org.zaproxy.zap.network.HttpRequestBody;
 
+
 class ProxyThread implements Runnable {
 
 //	private static final int		BUFFEREDSTREAM_SIZE = 4096;
@@ -111,7 +114,7 @@ class ProxyThread implements Runnable {
 
     private static final String BAD_GATEWAY_RESPONSE_STATUS = "502 Bad Gateway";
     private static final String GATEWAY_TIMEOUT_RESPONSE_STATUS = "504 Gateway Timeout";
-     
+    
 	// change httpSender to static to be shared among proxies to reuse keep-alive connections
 
 	protected ProxyServer parentServer = null;
@@ -162,7 +165,7 @@ class ProxyThread implements Runnable {
 	
 	/**
 	 * @param targethost the host where you want to connect to
-	 * @throws IOException
+	 * @throws IOException if an error occurred while establishing the SSL/TLS connection
 	 */
 	private void beginSSL(String targethost) throws IOException {
 		// ZAP: added parameter 'targethost'
@@ -315,22 +318,16 @@ class ProxyThread implements Runnable {
         msg.getResponseHeader().addHeader(HttpHeader.CONTENT_LENGTH, Integer.toString(message.length()));
         msg.getResponseHeader().addHeader(HttpHeader.CONTENT_TYPE, "text/plain; charset=UTF-8");
     }
-    
+
     private static void writeHttpResponse(HttpMessage msg, HttpOutputStream outputStream) throws IOException {
-    	
         outputStream.write(msg.getResponseHeader());
         outputStream.flush();
 
         if (msg.getResponseBody().length() > 0) {
-        	
-            
-
             outputStream.write(msg.getResponseBody().getBytes());
             outputStream.flush();
         }
     }
-
-	
 	
 	protected void processHttp(HttpRequestHeader requestHeader, boolean isSecure) throws IOException {
 
@@ -371,8 +368,8 @@ class ProxyThread implements Runnable {
 				msg.setRequestBody(reqBody);
 			}
             
-			if (proxyParam.isModifyAcceptEncodingHeader()) {
-				modifyHeader(msg);
+			if (proxyParam.isRemoveUnsupportedEncodings()) {
+				removeUnsupportedEncodings(msg);
 			}
 
             if (isProcessCache(msg)) {
@@ -443,14 +440,7 @@ class ProxyThread implements Runnable {
 			    }
 
 				try {
-					// Here is where the magic happens, I tested myself an I see that actually the images are displayed individually,
-					// try to go to google then type something like "beaches" in my case the following behavior happens:
-					// First iteration the layout with the words are display (the images' caption is display only)
-					// then again this method is called so this "writeHttpResponse" is called once again but now the most lef top image
-					// is render after the method is done.
-					// there are as many iteration like the above describe  as image to display
 					writeHttpResponse(msg, httpOut);
-					//writeHttpResponse(msg, null);
 				} catch (IOException e) {
 					StringBuilder strBuilder = new StringBuilder(200);
 					strBuilder.append("Failed to write/forward the HTTP response to the client: ");
@@ -564,7 +554,8 @@ class ProxyThread implements Runnable {
 	/**
 	 * Go through each observers to process a request in each observers.
 	 * The method can be modified in each observers.
-	 * @param httpMessage
+	 * @param httpMessage the request that was received from the client and may be forwarded to the server
+	 * @return {@code true} if the message should be forwarded to the server, {@code false} otherwise
 	 */
 	private boolean notifyListenerRequestSend(HttpMessage httpMessage) {
 		if (parentServer.excludeUrl(httpMessage.getRequestHeader().getURI())) {
@@ -588,7 +579,8 @@ class ProxyThread implements Runnable {
 	/**
 	 * Go thru each observers and process the http message in each observers.
 	 * The msg can be changed by each observers.
-	 * @param msg
+	 * @param httpMessage the response that was received from the server and may be forwarded to the client
+	 * @return {@code true} if the message should be forwarded to the client, {@code false} otherwise
 	 */
 	private boolean notifyListenerResponseReceive(HttpMessage httpMessage) {
 		if (parentServer.excludeUrl(httpMessage.getRequestHeader().getURI())) {
@@ -639,7 +631,7 @@ class ProxyThread implements Runnable {
 	 * Go thru each listener and offer him to take over the connection. The
 	 * first observer that returns true gets exclusive rights.
 	 * 
-	 * @param httpMessage Contains HTTP request & response.
+	 * @param httpMessage Contains HTTP request &amp; response.
 	 * @param inSocket Encapsulates the TCP connection to the browser.
 	 * @param method Provides more power to process response.
 	 * 
@@ -749,27 +741,15 @@ class ProxyThread implements Runnable {
         }
         return false;
     }
-	    
-    private static final Pattern remove_gzip1 = Pattern.compile("(gzip|deflate|compress|x-gzip|x-compress)[^,]*,?\\s*", Pattern.CASE_INSENSITIVE);
-    private static final Pattern remove_gzip2 = Pattern.compile("[,]\\z", Pattern.CASE_INSENSITIVE);
     
-    private void modifyHeader(HttpMessage msg) {
+    private void removeUnsupportedEncodings(HttpMessage msg) {
         String encoding = msg.getRequestHeader().getHeader(HttpHeader.ACCEPT_ENCODING);
         if (encoding == null) {
             return;
         }
         
-        encoding = remove_gzip1.matcher(encoding).replaceAll("");
-        encoding = remove_gzip2.matcher(encoding).replaceAll("");
-        // avoid returning gzip encoding
-        
-        if (encoding.length() == 0) {
-            encoding = null;
-        }
-        msg.getRequestHeader().setHeader(HttpHeader.ACCEPT_ENCODING,encoding);
-        
-//        msg.getRequestHeader().setHeader("TE", "chunked;q=0");
-
+        // No encodings supported in practise (HttpResponseBody needs to support them, which it doesn't, yet).
+        msg.getRequestHeader().setHeader(HttpHeader.ACCEPT_ENCODING, null);
     }
     
 	protected HttpSender getHttpSender() {
