@@ -19,12 +19,14 @@ public class HttpImage {
 	private BufferedImage bufferedImage;
 
 	public HttpImage(HttpMessage msg){//int height, int width, int imageSize, String extension, String url, BufferedImage bufferedImage){
-		//		this.setHeight(height);
-		//		this.setWidth(width);
-		//		this.setImageSize(imageSize);
-		//		this.setExtension(extension);
-		//		this.setUrl(url);
-		//		this.setBufferedImage(bufferedImage);
+		//initial values in case of error
+		this.height = 0;
+		this.width = 0;
+		this.imageSize = 0;
+		this.extension = "";
+		this.url = "";
+		this.bufferedImage = null;
+		
 		String typeHeader = msg.getResponseHeader().getHeader("Content-Type");
 		String extension = typeHeader.substring(typeHeader.lastIndexOf("/") + 1);
 		String url = msg.getRequestHeader().getURI().toString();
@@ -52,7 +54,6 @@ public class HttpImage {
 					this.bufferedImage = imageInBuffer;
 				}
 			}
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -23,7 +23,6 @@ public class FilterHttpContent extends FilterAdaptor {
 	@Override
 	public String getName() {
 		// Supported languages: English and Spanish
-		// return Constant.messages.getString("filter.imagefilter.name"); -> label for FilterReplaceImage
 		return Constant.messages.getString("filter.contentfilter.name");
 	}
 

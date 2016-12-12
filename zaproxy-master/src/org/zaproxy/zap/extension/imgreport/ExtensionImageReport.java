@@ -79,43 +79,25 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	@Override
 	public String getXml(SiteNode site) {
 		
-		ArrayList<HttpImage> siteImages = new ArrayList<HttpImage>(httpImageList);
-		
-		// Filter out images from other sites
-		siteImages.removeIf(httpImg -> !httpImg.getUrl().startsWith(site.getNodeName()));
-		
 		StringBuilder xml = new StringBuilder();
-
-		// If there is not images in the site, <ImageStatistics> tag is empty
 		
-		xml.append("\r\n<imagestatistics>\r\n");
-		/*
-		if (!siteImages.isEmpty()){
-			xml.append("\r\n<imagestatistics>\r\n");
-			xml.append("\r\n<site>").append(site.getNodeName()).append("</site>\r\n");
-			xml.append(getFileSizeStatistics(siteImages));
-			xml.append(getFileWidthStatistics(siteImages));
-			xml.append(getFileHeightStatistics(siteImages));
-			xml.append(getFileTypeStatistics(siteImages));
-			xml.append("</imagestatistics>\r\n");
+		if(!httpImageList.isEmpty()){
+			ArrayList<HttpImage> siteImages = new ArrayList<HttpImage>(httpImageList);
+			
+			// Filter out images from other sites
+			siteImages.removeIf(httpImg -> !httpImg.getUrl().startsWith(site.getNodeName()));
+	
+			// If there is not images in the site, <ImageStatistics> tag is not added
+			if (!siteImages.isEmpty()){
+				xml.append("\r\n<imagestatistics>\r\n");
+				xml.append("\r\n<site>").append(site.getNodeName()).append("</site>\r\n");
+				for(ImageStatistics statMaker : usedImageStatistics) {
+					xml.append(statMaker.getXML(siteImages));
+				}
+				xml.append("</imagestatistics>\r\n");
+			}
+		
 		}
-		*/
-		/*
-		Reflections reflections = new Reflections("org.zaproxy.zap.extension.imgreport");
-
-		Set<ImageStatistics> allImageStatistics = 
-				reflections.getSubTypesOf(ImageStatistics.class);
-		
-		for (ImageStatistics imgStat : allImageStatistics){
-			xml.append(imgStat.getXML(siteImages));
-		}
-		*/
-		
-		for(ImageStatistics statMaker : usedImageStatistics) {
-			xml.append(statMaker.getXML(siteImages));
-		}
-		xml.append("</imagestatistics>\r\n");
-		
 		return xml.toString();
 	}
 

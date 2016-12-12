@@ -63,12 +63,9 @@
 
 package org.parosproxy.paros.core.proxy;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.FileReader;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -83,18 +80,11 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import javax.imageio.ImageIO;
-
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.db.RecordHistory;
-import org.parosproxy.paros.extension.filter.EnhanceFilter;
-import org.parosproxy.paros.extension.filter.FlippingFilter;
-import org.parosproxy.paros.extension.filter.ImageProcessor;
-import org.parosproxy.paros.extension.filter.SimpleImageFilter;
-import org.parosproxy.paros.extension.filter.WatermarkFilter;
 import org.parosproxy.paros.model.Model;
 import org.parosproxy.paros.network.ConnectionParam;
 import org.parosproxy.paros.network.HttpHeader;
