@@ -831,112 +831,24 @@ public class ExtensionLoader {
         }
 
         MainMenuBar menuBar = view.getMainFrame().getMainMenuBar();
+        MenuHandler mh = new MenuHandler();
 
         // 2 menus at the back (Tools/Help)
-        addMenuHelper(menuBar, hookMenu.getNewMenus(), 2);
+        mh.addMenuHelper(menuBar, hookMenu.getNewMenus(), 2);
 
-        addMenuHelper(menuBar.getMenuFile(), hookMenu.getFile(), 2);
-        addMenuHelper(menuBar.getMenuTools(), hookMenu.getTools(), 2);
-        addMenuHelper(menuBar.getMenuEdit(), hookMenu.getEdit());
-        addMenuHelper(menuBar.getMenuView(), hookMenu.getView());
-        addMenuHelper(menuBar.getMenuAnalyse(), hookMenu.getAnalyse());
-        addMenuHelper(menuBar.getMenuHelp(), hookMenu.getHelpMenus());
-        addMenuHelper(menuBar.getMenuReport(), hookMenu.getReportMenus());
-        addMenuHelper(menuBar.getMenuOnline(), hookMenu.getOnlineMenus());
+        mh.addMenuHelper(menuBar.getMenuFile(), hookMenu.getFile(), 2);
+        mh.addMenuHelper(menuBar.getMenuTools(), hookMenu.getTools(), 2);
+        mh.addMenuHelper(menuBar.getMenuEdit(), hookMenu.getEdit());
+        mh.addMenuHelper(menuBar.getMenuView(), hookMenu.getView());
+        mh.addMenuHelper(menuBar.getMenuAnalyse(), hookMenu.getAnalyse());
+        mh.addMenuHelper(menuBar.getMenuHelp(), hookMenu.getHelpMenus());
+        mh.addMenuHelper(menuBar.getMenuReport(), hookMenu.getReportMenus());
+        mh.addMenuHelper(menuBar.getMenuOnline(), hookMenu.getOnlineMenus());
 
-        addMenuHelper(view.getPopupList(), hookMenu.getPopupMenus());
+        mh.addMenuHelper(view.getPopupList(), hookMenu.getPopupMenus());
     }
 
-    private void addMenuHelper(JMenu menu, List<JMenuItem> items) {
-        addMenuHelper(menu, items, 0);
-    }
-
-    private void addMenuHelper(JMenuBar menuBar, List<JMenuItem> items, int existingCount) {
-        for (JMenuItem item : items) {
-            if (item != null) {
-                menuBar.add(item, menuBar.getMenuCount() - existingCount);
-            }
-        }
-        menuBar.revalidate();
-    }
-
-    private void addMenuHelper(JMenu menu, List<JMenuItem> items, int existingCount) {
-        for (JMenuItem item : items) {
-            if (item != null) {
-                if (item == ExtensionHookMenu.MENU_SEPARATOR) {
-                    menu.addSeparator();
-                    continue;
-                }
-
-                menu.add(item, menu.getItemCount() - existingCount);
-            }
-        }
-
-        menu.revalidate();
-    }
-
-    private void addMenuHelper(List<JMenuItem> menuList, List<JMenuItem> items) {
-        for (JMenuItem item : items) {
-            if (item != null) {
-                menuList.add(item);
-            }
-        }
-    }
-
-    private void removeMenu(View view, ExtensionHook hook) {
-        if (view == null) {
-            return;
-        }
-
-        ExtensionHookMenu hookMenu = hook.getHookMenu();
-        if (hookMenu == null) {
-            return;
-        }
-
-        MainMenuBar menuBar = view.getMainFrame().getMainMenuBar();
-
-        // clear up various menus
-        removeMenuHelper(menuBar, hookMenu.getNewMenus());
-
-        removeMenuHelper(menuBar.getMenuFile(), hookMenu.getFile());
-        removeMenuHelper(menuBar.getMenuTools(), hookMenu.getTools());
-        removeMenuHelper(menuBar.getMenuEdit(), hookMenu.getEdit());
-        removeMenuHelper(menuBar.getMenuView(), hookMenu.getView());
-        removeMenuHelper(menuBar.getMenuAnalyse(), hookMenu.getAnalyse());
-        removeMenuHelper(menuBar.getMenuHelp(), hookMenu.getHelpMenus());
-        removeMenuHelper(menuBar.getMenuReport(), hookMenu.getReportMenus());
-        removeMenuHelper(menuBar.getMenuOnline(), hookMenu.getOnlineMenus());
-
-        removeMenuHelper(view.getPopupList(), hookMenu.getPopupMenus());
-
-        view.refreshTabViewMenus();
-    }
-
-    private void removeMenuHelper(JMenuBar menuBar, List<JMenuItem> items) {
-        for (JMenuItem item : items) {
-            if (item != null) {
-                menuBar.remove(item);
-            }
-        }
-        menuBar.revalidate();
-    }
-
-    private void removeMenuHelper(JMenu menu, List<JMenuItem> items) {
-        for (JMenuItem item : items) {
-            if (item != null) {
-                menu.remove(item);
-            }
-        }
-        menu.revalidate();
-    }
-
-    private void removeMenuHelper(List<JMenuItem> menuList, List<JMenuItem> items) {
-        for (JMenuItem item : items) {
-            if (item != null) {
-                menuList.remove(item);
-            }
-        }
-    }
+    
 
     private void hookOptions(ExtensionHook hook) {
         List<AbstractParam> list = hook.getOptionsParamSetList();
@@ -1042,62 +954,6 @@ public class ExtensionLoader {
         }
         
         View.getSingleton().getWorkbench().removePanel(panel, WorkbenchPanel.PanelType.WORK);
-    }
-
-    public void removePopupMenuItem(ExtensionPopupMenuItem popupMenuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getPopupList().remove(popupMenuItem);
-    }
-
-    public void removeFileMenuItem(JMenuItem menuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getMainFrame().getMainMenuBar().getMenuFile().remove(menuItem);
-    }
-
-    public void removeEditMenuItem(JMenuItem menuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getMainFrame().getMainMenuBar().getMenuEdit().remove(menuItem);
-    }
-
-    public void removeViewMenuItem(JMenuItem menuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getMainFrame().getMainMenuBar().getMenuView().remove(menuItem);
-    }
-
-    public void removeToolsMenuItem(JMenuItem menuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getMainFrame().getMainMenuBar().getMenuTools().remove(menuItem);
-    }
-
-    public void removeHelpMenuItem(JMenuItem menuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getMainFrame().getMainMenuBar().getMenuHelp().remove(menuItem);
-    }
-
-    public void removeReportMenuItem(JMenuItem menuItem) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getMainFrame().getMainMenuBar().getMenuReport().remove(menuItem);
     }
 
     /**
@@ -1246,7 +1102,8 @@ public class ExtensionLoader {
 
         if (EventQueue.isDispatchThread()) {
             removeView(extension, view, hook);
-            removeMenu(view, hook);
+            MenuHandler mh = new MenuHandler();
+            mh.removeMenu(view, hook.getHookMenu());
         } else {
             EventQueue.invokeLater(new Runnable() {
 

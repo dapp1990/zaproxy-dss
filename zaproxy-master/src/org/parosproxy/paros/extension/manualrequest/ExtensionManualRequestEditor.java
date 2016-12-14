@@ -46,16 +46,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+
 import org.parosproxy.paros.Constant;
-import org.parosproxy.paros.control.Control;
 import org.parosproxy.paros.control.Control.Mode;
 import org.parosproxy.paros.extension.ExtensionAdaptor;
 import org.parosproxy.paros.extension.ExtensionHook;
-import org.parosproxy.paros.extension.ExtensionLoader;
+import org.parosproxy.paros.extension.MenuHandler;
 import org.parosproxy.paros.extension.SessionChangedListener;
 import org.parosproxy.paros.extension.ViewDelegate;
 import org.parosproxy.paros.extension.manualrequest.http.impl.ManualHttpRequestEditorDialog;
 import org.parosproxy.paros.model.Session;
+import org.parosproxy.paros.view.View;
 import org.zaproxy.zap.extension.httppanel.Message;
 
 
@@ -107,8 +108,9 @@ public class ExtensionManualRequestEditor extends ExtensionAdaptor implements Se
 
 			if (getView() != null) {
 				// unload menu items
-				ExtensionLoader extLoader = Control.getSingleton().getExtensionLoader();
-				extLoader.removeToolsMenuItem(dialogue.getMenuItem());
+//				ExtensionLoader extLoader = Control.getSingleton().getExtensionLoader();	unused
+				MenuHandler mh = new MenuHandler();
+				mh.removeMenuHelper(View.getSingleton().getMainFrame().getMainMenuBar(), dialogue.getMenuItem());
 			}
 		}
 	}
