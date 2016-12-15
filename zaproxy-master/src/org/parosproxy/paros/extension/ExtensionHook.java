@@ -302,7 +302,7 @@ public class ExtensionHook {
 		return addonFilesChangedListenerList;
 	}
 
-    public List<OverrideMessageProxyListener> getOverrideMessageProxyListenerList() {
+    public List<OverrideMessageProxyListener> getOverrideMessageProxyListeners() {
         return overrideMessageProxyListenersList;
     }
 

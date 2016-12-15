@@ -75,18 +75,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.CommandLine;
 import org.parosproxy.paros.common.AbstractParam;
 import org.parosproxy.paros.control.Control;
 import org.parosproxy.paros.control.Control.Mode;
 import org.parosproxy.paros.control.Proxy;
-import org.parosproxy.paros.core.proxy.ConnectRequestProxyListener;
-import org.parosproxy.paros.core.proxy.OverrideMessageProxyListener;
 import org.parosproxy.paros.core.proxy.ProxyListener;
 import org.parosproxy.paros.core.scanner.Scanner;
 import org.parosproxy.paros.core.scanner.ScannerHook;
@@ -99,10 +93,8 @@ import org.parosproxy.paros.model.Session;
 import org.parosproxy.paros.view.AbstractParamDialog;
 import org.parosproxy.paros.view.AbstractParamPanel;
 import org.parosproxy.paros.view.MainMenuBar;
-import org.parosproxy.paros.view.SiteMapPanel;
 import org.parosproxy.paros.view.View;
 import org.parosproxy.paros.view.WorkbenchPanel;
-import org.zaproxy.zap.PersistentConnectionListener;
 import org.zaproxy.zap.control.AddOn;
 import org.zaproxy.zap.extension.AddonFilesChangedListener;
 import org.zaproxy.zap.extension.api.API;
@@ -110,7 +102,6 @@ import org.zaproxy.zap.extension.api.ApiImplementor;
 import org.zaproxy.zap.extension.AddOnInstallationStatusListener;
 import org.zaproxy.zap.model.ContextDataFactory;
 import org.zaproxy.zap.view.ContextPanelFactory;
-import org.zaproxy.zap.view.SiteMapListener;
 
 public class ExtensionLoader {
 
@@ -125,6 +116,10 @@ public class ExtensionLoader {
     public ExtensionLoader(Model model, View view) {
         this.model = model;
         this.view = view;
+    }
+    
+    public List<ExtensionHook> getExtensionHooks() {
+    	return new ArrayList<ExtensionHook>(extensionHooks.values());
     }
 
     public void addExtension(Extension extension) {
@@ -252,37 +247,6 @@ public class ExtensionLoader {
         }
     }
 
-    public void hookOverrideMessageProxyListener(Proxy proxy) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<OverrideMessageProxyListener> listenerList = hook.getOverrideMessageProxyListenerList();
-            for (OverrideMessageProxyListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        proxy.addOverrideMessageProxyListener(listener);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    private void removeOverrideMessageProxyListener(ExtensionHook hook) {
-        Proxy proxy = Control.getSingleton().getProxy();
-        List<OverrideMessageProxyListener> listenerList = hook.getOverrideMessageProxyListenerList();
-        for (OverrideMessageProxyListener listener : listenerList) {
-            try {
-                if (listener != null) {
-                    proxy.removeOverrideMessageProxyListener(listener);
-                }
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
     /**
      * Hooks (adds) the {@code ConnectRequestProxyListener}s of the loaded extensions to the given {@code proxy}.
      * <p>
@@ -292,94 +256,8 @@ public class ExtensionLoader {
      * @param proxy the local proxy
      * @since 2.5.0
      */
-    public void hookConnectRequestProxyListeners(Proxy proxy) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            hookConnectRequestProxyListeners(proxy, hook.getConnectRequestProxyListeners());
-        }
-    }
-
-    private static void hookConnectRequestProxyListeners(Proxy proxy, List<ConnectRequestProxyListener> listeners) {
-        for (ConnectRequestProxyListener listener : listeners) {
-            proxy.addConnectRequestProxyListener(listener);
-        }
-    }
-
-    private void removeConnectRequestProxyListener(ExtensionHook hook) {
-        Proxy proxy = Control.getSingleton().getProxy();
-        for (ConnectRequestProxyListener listener : hook.getConnectRequestProxyListeners()) {
-            proxy.removeConnectRequestProxyListener(listener);
-        }
-    }
-
-    public void hookPersistentConnectionListener(Proxy proxy) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            hookPersistentConnectionListeners(proxy, hook.getPersistentConnectionListener());
-        }
-    }
-
-    private static void hookPersistentConnectionListeners(Proxy proxy, List<PersistentConnectionListener> listeners) {
-        for (PersistentConnectionListener listener : listeners) {
-            try {
-                if (listener != null) {
-                    proxy.addPersistentConnectionListener(listener);
-                }
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void removePersistentConnectionListener(ExtensionHook hook) {
-        Proxy proxy = Control.getSingleton().getProxy();
-        List<PersistentConnectionListener> listenerList = hook.getPersistentConnectionListener();
-        for (PersistentConnectionListener listener : listenerList) {
-            try {
-                if (listener != null) {
-                    proxy.removePersistentConnectionListener(listener);
-                }
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
 
     // ZAP: Added support for site map listeners
-    public void hookSiteMapListener(SiteMapPanel siteMapPanel) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            hookSiteMapListeners(siteMapPanel, hook.getSiteMapListenerList());
-        }
-    }
-
-    private static void hookSiteMapListeners(SiteMapPanel siteMapPanel, List<SiteMapListener> listeners) {
-        for (SiteMapListener listener : listeners) {
-            try {
-                if (listener != null) {
-                    siteMapPanel.addSiteMapListener(listener);
-                }
-            } catch (Exception e) {
-                // ZAP: Log the exception
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void removeSiteMapListener(ExtensionHook hook) {
-        if (view != null) {
-            SiteMapPanel siteMapPanel = view.getSiteTreePanel();
-            List<SiteMapListener> listenerList = hook.getSiteMapListenerList();
-            for (SiteMapListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        siteMapPanel.removeSiteMapListener(listener);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
 
     // ZAP: method called by the scanner to load all scanner hooks. 
     public void hookScannerHook(Scanner scan) {
@@ -672,11 +550,14 @@ public class ExtensionLoader {
         Proxy proxy = Control.getSingleton().getProxy();
         hookProxyListeners(proxy, extHook.getProxyListenerList());
 
-        hookPersistentConnectionListeners(proxy, extHook.getPersistentConnectionListener());
-        hookConnectRequestProxyListeners(proxy, extHook.getConnectRequestProxyListeners());
+//        hookPersistentConnectionListeners(proxy, extHook.getPersistentConnectionListener());
+//        hookConnectRequestProxyListeners(proxy, extHook.getConnectRequestProxyListeners());
+        (new PersistentConnectionLinker()).hookListener(proxy);
+        (new ConnectRequestProxyLinker()).hookListener(proxy);
 
         if (view != null) {
-            hookSiteMapListeners(view.getSiteTreePanel(), extHook.getSiteMapListenerList());
+//            hookSiteMapListeners(view.getSiteTreePanel(), extHook.getSiteMapListenerList());
+        	(new SiteMapLinker()).hookListener(proxy);
         }
     }
 
@@ -1066,15 +947,13 @@ public class ExtensionLoader {
 
         unloadOptions(hook);
 
-        removePersistentConnectionListener(hook);
+        (new PersistentConnectionLinker()).removeListener(hook);
+        (new OverrideMessageProxyLinker()).removeListener(hook);
+        (new ConnectRequestProxyLinker()).removeListener(hook);
+        (new SiteMapLinker()).removeListener(hook);
+        //removePersistentConnectionListener(hook);
 
         removeProxyListener(hook);
-
-        removeOverrideMessageProxyListener(hook);
-
-        removeConnectRequestProxyListener(hook);
-
-        removeSiteMapListener(hook);
 
         for (ContextDataFactory contextDataFactory : hook.getContextDataFactories()) {
             try {

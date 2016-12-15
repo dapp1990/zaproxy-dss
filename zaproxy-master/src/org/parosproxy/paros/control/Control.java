@@ -78,6 +78,11 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.db.DatabaseException;
+import org.parosproxy.paros.extension.ConnectRequestProxyLinker;
+import org.parosproxy.paros.extension.HookProxyLinker;
+import org.parosproxy.paros.extension.OverrideMessageProxyLinker;
+import org.parosproxy.paros.extension.PersistentConnectionLinker;
+import org.parosproxy.paros.extension.SiteMapLinker;
 import org.parosproxy.paros.model.Model;
 import org.parosproxy.paros.model.Session;
 import org.parosproxy.paros.model.SessionListener;
@@ -121,13 +126,17 @@ public class Control extends AbstractControl implements SessionListener {
 		// ZAP: Start proxy even if no view
 	    Proxy proxy = getProxy(overrides);
 	    getExtensionLoader().hookProxyListener(proxy);
-	    getExtensionLoader().hookOverrideMessageProxyListener(proxy);
-	    getExtensionLoader().hookPersistentConnectionListener(proxy);
-	    getExtensionLoader().hookConnectRequestProxyListeners(proxy);
+//	    getExtensionLoader().hookOverrideMessageProxyListener(proxy);
+//	    getExtensionLoader().hookPersistentConnectionListener(proxy);
+//	    getExtensionLoader().hookConnectRequestProxyListeners(proxy);
+	    (new OverrideMessageProxyLinker()).hookListener(proxy);
+	    (new PersistentConnectionLinker()).hookListener(proxy);
+	    (new ConnectRequestProxyLinker()).hookListener(proxy);
 		
 		if (view != null) {
 		    // ZAP: Add site map listeners
-		    getExtensionLoader().hookSiteMapListener(view.getSiteTreePanel());
+//		    getExtensionLoader().hookSiteMapListener(view.getSiteTreePanel());
+			(new SiteMapLinker()).hookListener(proxy);
 		}
 		
 		model.postInit();
