@@ -74,6 +74,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.CommandLine;
@@ -809,21 +811,15 @@ public class ExtensionLoader {
     /**
      * Init all extensions
      */
-    private void initAllExtension(double progressFactor) {        
-        double factorPerc = progressFactor / getExtensionCount();
-        
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                getExtension(i).init();
-                getExtension(i).databaseOpen(Model.getSingleton().getDb());
-                if (view != null) {
-                	view.addSplashScreenLoadingCompletion(factorPerc);
-                }
-                
-            } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
+    private void initAllExtension(double progressFactor) {
+    	initExtension(i -> {
+			try {
+				getExtension(i).init();
+				getExtension(i).databaseOpen(Model.getSingleton().getDb());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		},  progressFactor);
     }
 
     /**
@@ -831,19 +827,8 @@ public class ExtensionLoader {
      * @param model the model to apply to all extensions
      */
     private void initModelAllExtension(Model model, double progressFactor) {
-        double factorPerc = progressFactor / getExtensionCount();
-        
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                getExtension(i).initModel(model);
-                if (view != null) {
-                    view.addSplashScreenLoadingCompletion(factorPerc);
-                }
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
+ 
+    	initExtension(i -> getExtension(i).initModel(model), progressFactor);
     }
 
     /**
@@ -876,11 +861,15 @@ public class ExtensionLoader {
     }
 
     private void initXMLAllExtension(Session session, OptionsParam options, double progressFactor) {
+        initExtension(i -> getExtension(i).initXML(session, options), progressFactor);
+    }
+    
+    private void initExtension(Consumer<Integer> actionToExecute, double progressFactor) {
         double factorPerc = progressFactor / getExtensionCount();
         
         for (int i = 0; i < getExtensionCount(); i++) {
             try {
-                getExtension(i).initXML(session, options);
+            	actionToExecute.accept(i);
                 if (view != null) {
                     view.addSplashScreenLoadingCompletion(factorPerc);
                 }
