@@ -109,6 +109,7 @@ public class ExtensionLoader {
     private final Map<Class<? extends Extension>, Extension> extensionsMap = new HashMap<>();
     private final Map<Extension, ExtensionHook> extensionHooks = new HashMap<>();
     private Model model = null;
+    private HookProxyLinkerManager hookProxyLinkerManager;
 
     private View view = null;
     private static final Logger logger = Logger.getLogger(ExtensionLoader.class);
@@ -116,6 +117,7 @@ public class ExtensionLoader {
     public ExtensionLoader(Model model, View view) {
         this.model = model;
         this.view = view;
+        hookProxyLinkerManager = new HookProxyLinkerManager(Control.getSingleton().getProxy());
     }
     
     public List<ExtensionHook> getExtensionHooks() {
@@ -212,39 +214,6 @@ public class ExtensionLoader {
 
     public int getExtensionCount() {
         return extensionList.size();
-    }
-
-    public void hookProxyListener(Proxy proxy) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            hookProxyListeners(proxy, hook.getProxyListenerList());
-        }
-    }
-
-    private static void hookProxyListeners(Proxy proxy, List<ProxyListener> listeners) {
-        for (ProxyListener listener : listeners) {
-            try {
-                if (listener != null) {
-                    proxy.addProxyListener(listener);
-                }
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void removeProxyListener(ExtensionHook hook) {
-        Proxy proxy = Control.getSingleton().getProxy();
-        List<ProxyListener> listenerList = hook.getProxyListenerList();
-        for (ProxyListener listener : listenerList) {
-            try {
-                if (listener != null) {
-                    proxy.removeProxyListener(listener);
-                }
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
     }
 
     /**
@@ -548,16 +517,16 @@ public class ExtensionLoader {
         ext.start();
 
         Proxy proxy = Control.getSingleton().getProxy();
-        hookProxyListeners(proxy, extHook.getProxyListenerList());
+        hookProxyLinkerManager.hookProxyListener();
 
 //        hookPersistentConnectionListeners(proxy, extHook.getPersistentConnectionListener());
 //        hookConnectRequestProxyListeners(proxy, extHook.getConnectRequestProxyListeners());
-        (new PersistentConnectionLinker()).hookListener(proxy);
-        (new ConnectRequestProxyLinker()).hookListener(proxy);
+        hookProxyLinkerManager.hookPersistentConnectionListener();
+        hookProxyLinkerManager.hookConnectRequestProxyListener();
 
         if (view != null) {
 //            hookSiteMapListeners(view.getSiteTreePanel(), extHook.getSiteMapListenerList());
-        	(new SiteMapLinker()).hookListener(proxy);
+        	hookProxyLinkerManager.hookSiteMapListener(view.getSiteTreePanel());
         }
     }
 
@@ -947,13 +916,7 @@ public class ExtensionLoader {
 
         unloadOptions(hook);
 
-        (new PersistentConnectionLinker()).removeListener(hook);
-        (new OverrideMessageProxyLinker()).removeListener(hook);
-        (new ConnectRequestProxyLinker()).removeListener(hook);
-        (new SiteMapLinker()).removeListener(hook);
-        //removePersistentConnectionListener(hook);
-
-        removeProxyListener(hook);
+        hookProxyLinkerManager.removeAllListeners(hook);
 
         for (ContextDataFactory contextDataFactory : hook.getContextDataFactories()) {
             try {

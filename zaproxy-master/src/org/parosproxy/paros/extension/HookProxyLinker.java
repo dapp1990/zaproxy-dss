@@ -9,36 +9,38 @@ import org.parosproxy.paros.control.Proxy;
 
 public class HookProxyLinker {
 	
+	private static final Logger logger = Logger.getLogger(HookProxyLinker.class);		//Slight change functionality
+	
 	private Class<?> clazz;
 	private Method getMethod;
 	private Method addMethod;
 	private Method removeMethod;
+	private Object proxy;
 
-	protected HookProxyLinker(Class<?> clazz, String methodRoot) {
+	protected HookProxyLinker(Class<?> clazz, String methodRoot, Object proxy) {
 		this.clazz = clazz;
+		this.proxy = proxy;
 		try {
 			this.getMethod = ExtensionHook.class.getMethod("get"+methodRoot+"Listeners");
-			this.addMethod = Proxy.class.getMethod("add"+methodRoot+"Listener", clazz);
-			this.removeMethod = Proxy.class.getMethod("remove"+methodRoot+"Listener", clazz);
+			this.addMethod = proxy.getClass().getMethod("add"+methodRoot+"Listener", clazz);
+			this.removeMethod = proxy.getClass().getMethod("remove"+methodRoot+"Listener", clazz);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		};
 	}
-	
-	private static final Logger logger = Logger.getLogger(HookProxyLinker.class);		//Slight change functionality
 
-	public void hookListener(Proxy proxy) {
+	public void hookListener() {
 		try {
 			List<ExtensionHook> extensionHooks = Control.getSingleton().getExtensionLoader().getExtensionHooks();
 			for (ExtensionHook hook : extensionHooks) {
-				hookListeners(proxy, (List<?>) getMethod.invoke(hook));
+				hookListeners((List<?>) getMethod.invoke(hook));
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		} 
 	}
 
-	private void hookListeners(Proxy proxy, List<?> listeners) {
+	private void hookListeners(List<?> listeners) {
 		for (Object listener : listeners) {
 			try {
 				if (listener != null) {

@@ -157,7 +157,7 @@ public class ExtensionHook {
      * @return an unmodifiable {@code List} containing the added {@code ConnectRequestProxyListener}s, never {@code null}.
      * @since 2.5.0
      */
-    List<ConnectRequestProxyListener> getConnectRequestProxyListeners() {
+    public List<ConnectRequestProxyListener> getConnectRequestProxyListeners() {
         if (connectRequestProxyListeners == null) {
             return Collections.emptyList();
         }
@@ -263,7 +263,7 @@ public class ExtensionHook {
     /**
      * @return Returns the proxyListenerList.
      */
-    public Vector<ProxyListener> getProxyListenerList() {
+    public Vector<ProxyListener> getProxyListeners() {
         return proxyListenerList;
     }
 
@@ -274,7 +274,7 @@ public class ExtensionHook {
         return sessionListenerList;
     }
 
-    public Vector<SiteMapListener> getSiteMapListenerList() {
+    public Vector<SiteMapListener> getSiteMapListeners() {
         return siteMapListenerList;
     }
     
@@ -283,7 +283,7 @@ public class ExtensionHook {
     	return scannerHookList;
     }
 
-    public Vector<PersistentConnectionListener> getPersistentConnectionListener() {
+    public Vector<PersistentConnectionListener> getPersistentConnectionListeners() {
         return persistentConnectionListenerList;
     }
     
