@@ -75,7 +75,7 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -83,7 +83,6 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.db.RecordHistory;
@@ -98,7 +97,6 @@ import org.parosproxy.paros.network.HttpRequestHeader;
 import org.parosproxy.paros.network.HttpSender;
 import org.parosproxy.paros.network.HttpUtil;
 import org.parosproxy.paros.security.MissingRootCertificateException;
-import org.zaproxy.zap.PersistentConnectionListener;
 import org.zaproxy.zap.ZapGetMethod;
 import org.zaproxy.zap.extension.api.API;
 import org.zaproxy.zap.network.HttpRequestBody;
@@ -117,18 +115,22 @@ class ProxyThread implements Runnable {
     
 	// change httpSender to static to be shared among proxies to reuse keep-alive connections
 
-	protected ProxyServer parentServer = null;
-	protected ProxyParam proxyParam = null;
+	protected ProxyServer parentServer = null; 
+	protected ProxyParam proxyParam = null; 
 	protected ConnectionParam connectionParam = null;
-	protected Thread thread = null;
+	protected Thread thread = null; 
 	protected Socket inSocket	= null;
-	protected Socket outSocket = null;
-	protected HttpInputStream httpIn = null;
-	protected HttpOutputStream httpOut = null;
+	
+	protected Socket outSocket = null; 
 	protected ProxyThread originProcess = this;
+	
+	protected HttpInputStream httpIn = null; 
+	protected HttpOutputStream httpOut = null;
+
 	
 	private HttpSender 		httpSender = null;
 	private Object semaphore = this;
+	private HashMap<String, NotificationHttp> notificationHttp = new HashMap<String, NotificationHttp>();
 	
 	// ZAP: New attribute to allow for skipping disconnect
 	private boolean keepSocketOpen = false;
@@ -142,7 +144,14 @@ class ProxyThread implements Runnable {
 		parentServer = server;
 		proxyParam = parentServer.getProxyParam();
 		connectionParam = parentServer.getConnectionParam();
-
+		
+		notificationHttp.put("ListenerRequestSend", new NotificationListenerRequestSend());
+		notificationHttp.put("ListenerResponseReceive", new NotificationListenerResponseReceive());
+		notificationHttp.put("OverrideListenersRequestSend", new NotificationOverrideListenersRequestSend());
+		notificationHttp.put("OverrideListenersResponseReceived", new NotificationOverrideListenersResponseReceived());
+		notificationHttp.put("ConnectMessage", new NotificationConnectMessage());
+		notificationHttp.put("PersistentConnectionListener", new NotificationPersistentConnectionListener());
+		
 		inSocket = socket;
     	try {
 			inSocket.setTcpNoDelay(true);
@@ -162,39 +171,7 @@ class ProxyThread implements Runnable {
 		thread.start();
         
 	}
-	
-	/**
-	 * @param targethost the host where you want to connect to
-	 * @throws IOException if an error occurred while establishing the SSL/TLS connection
-	 */
-	private void beginSSL(String targethost) throws IOException {
-		// ZAP: added parameter 'targethost'
-        try {
-			inSocket = HttpSender.getSSLConnector().createTunnelServerSocket(targethost, inSocket);
-        } catch (MissingRootCertificateException e) {
-        	throw new MissingRootCertificateException(e); // throw again, cause will be catched later.
-		} catch (Exception e) {
-			// ZAP: transform for further processing 
-			throw new IOException("Error while establishing SSL connection for '" + targethost + "'!", e);
-		}
-        
-        httpIn = new HttpInputStream(inSocket);
-        httpOut = new HttpOutputStream(inSocket.getOutputStream());
-    }
-	
-	private static boolean isSslTlsHandshake(byte[] bytes) {
-		if (bytes.length < 3) {
-			throw new IllegalArgumentException("The parameter bytes must have at least 3 bytes.");
-		}
-		// Check if ContentType is handshake(22)
-		if (bytes[0] == 0x16) {
-			// Check if "valid" ProtocolVersion >= SSLv3 (TLSv1, TLSv1.1, ...) or SSLv2
-			if (bytes[1] >= 0x03 || (bytes[1] == 0x00 && bytes[2] == 0x02)) {
-				return true;
-			}
-		}
-		return false;
-	}
+
 
 	@Override
 	public void run() {
@@ -219,7 +196,8 @@ class ProxyThread implements Runnable {
 					httpOut.flush();
 					connectMsg.setResponseHeader(CONNECT_HTTP_200);
 					connectMsg.setTimeElapsedMillis((int) (System.currentTimeMillis() - connectMsg.getTimeSentMillis()));
-					notifyConnectMessage(connectMsg);
+					
+					notificationHttp.get("ConnectMessage").notify(this.parentServer, connectMsg);
 					
 					byte[] bytes = new byte[3];
 					bufferedInputStream.mark(3);
@@ -239,9 +217,9 @@ class ProxyThread implements Runnable {
 					// May we can redirect to some kind of ZAP custom error page.
 
 					final HttpMessage errmsg = new HttpMessage(firstHeader);
-					setErrorResponse(errmsg, BAD_GATEWAY_RESPONSE_STATUS, e, "ZAP SSL Error");
+					Response.setError(errmsg, BAD_GATEWAY_RESPONSE_STATUS, e, "ZAP SSL Error");
 
-			    	writeHttpResponse(errmsg, httpOut);
+					Response.writeHttp(errmsg, httpOut);
 
 			        throw new IOException(e);
 				}
@@ -270,64 +248,35 @@ class ProxyThread implements Runnable {
     		}
 		}
 	}
-
-    /**
-     * Notifies the {@code ConnectRequestProxyListener}s that a HTTP CONNECT request was received from a client.
-     * 
-     * @param connectMessage the HTTP CONNECT request received from a client
-     */
-    private void notifyConnectMessage(HttpMessage connectMessage) {
-        for (ConnectRequestProxyListener listener : parentServer.getConnectRequestProxyListeners()) {
-            try {
-                listener.receivedConnectRequest(connectMessage);
-            } catch (Exception e) {
-                log.error("An error occurred while notifying listener:", e);
+	
+	protected void disconnect() {
+		try {
+            if (httpIn != null) {
+                httpIn.close();
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                log.debug(e.getMessage(), e);
             }
         }
-    }
-
-    private static void setErrorResponse(HttpMessage msg, String responseStatus, Exception cause)
-            throws HttpMalformedHeaderException {
-        setErrorResponse(msg, responseStatus, cause, "ZAP Error");
-    }
-
-    private static void setErrorResponse(HttpMessage msg, String responseStatus, Exception cause, String errorType)
-            throws HttpMalformedHeaderException {
-        StringBuilder strBuilder = new StringBuilder();
-        strBuilder.append(errorType)
-                .append(" [")
-                .append(cause.getClass().getName())
-                .append("]: ")
-                .append(cause.getLocalizedMessage())
-                .append("\n\nStack Trace:\n");
-        for (String stackTraceFrame : ExceptionUtils.getRootCauseStackTrace(cause)) {
-            strBuilder.append(stackTraceFrame).append('\n');
+        
+        try {
+            if (httpOut != null) {
+                httpOut.close();
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                log.debug(e.getMessage(), e);
+            }
         }
 
-        setErrorResponse(msg, responseStatus, strBuilder.toString());
-    }
-
-    private static void setErrorResponse(HttpMessage msg, String responseStatus, String message)
-            throws HttpMalformedHeaderException {
-        msg.setResponseHeader("HTTP/1.1 " + responseStatus);
-
-        if (!HttpRequestHeader.HEAD.equals(msg.getRequestHeader().getMethod())) {
-            msg.setResponseBody(message);
+    	HttpUtil.closeSocket(inSocket);
+        
+		if (httpSender != null) {
+            httpSender.shutdown();
         }
 
-        msg.getResponseHeader().addHeader(HttpHeader.CONTENT_LENGTH, Integer.toString(message.length()));
-        msg.getResponseHeader().addHeader(HttpHeader.CONTENT_TYPE, "text/plain; charset=UTF-8");
-    }
-
-    private static void writeHttpResponse(HttpMessage msg, HttpOutputStream outputStream) throws IOException {
-        outputStream.write(msg.getResponseHeader());
-        outputStream.flush();
-
-        if (msg.getResponseBody().length() > 0) {
-            outputStream.write(msg.getResponseBody().getBytes());
-            outputStream.flush();
-        }
-    }
+	}
 	
 	protected void processHttp(HttpRequestHeader requestHeader, boolean isSecure) throws IOException {
 
@@ -387,9 +336,10 @@ class ProxyThread implements Runnable {
 			boolean send = true;
 			synchronized (semaphore) {
 			    
-			    if (notifyOverrideListenersRequestSend(msg)) {
+				
+			    if (notificationHttp.get("OverrideListenersRequestSend").notify(this.parentServer, msg)) {
 			        send = false;
-			    } else if (! notifyListenerRequestSend(msg)) {
+			    } else if (! notificationHttp.get("ListenerRequestSend").notify(this.parentServer, msg)) {
 		        	// One of the listeners has told us to drop the request
 			    	return;
 			    }
@@ -408,8 +358,8 @@ class ProxyThread implements Runnable {
 
 						decodeResponseIfNeeded(msg);
 
-			             if (!notifyOverrideListenersResponseReceived(msg)) {
-                            if (!notifyListenerResponseReceive(msg)) {
+			             if (!notificationHttp.get("OverrideListenersResponseReceived").notify(this.parentServer, msg)) {
+                            if (!notificationHttp.get("ListenerResponseReceive").notify(this.parentServer, msg)) {
                                 // One of the listeners has told us to drop the response
                                 return;
                             }
@@ -427,20 +377,20 @@ class ProxyThread implements Runnable {
 							msg.getRequestHeader().getURI(),
 							connectionParam.getTimeoutInSecs());
 					log.warn(message);
-					setErrorResponse(msg, GATEWAY_TIMEOUT_RESPONSE_STATUS, message);
-
-			        notifyListenerResponseReceive(msg);
+					Response.setError(msg, GATEWAY_TIMEOUT_RESPONSE_STATUS, message);
+					
+					notificationHttp.get("ListenerResponseReceive").notify(this.parentServer, msg);
+					
 			    } catch (IOException e) {
-			    	setErrorResponse(msg, BAD_GATEWAY_RESPONSE_STATUS, e);
+			    	Response.setError(msg, BAD_GATEWAY_RESPONSE_STATUS, e);
 			    	
-			        notifyListenerResponseReceive(msg);
-
+			    	notificationHttp.get("ListenerResponseReceive").notify(this.parentServer, msg);
 
 			        //throw e;
 			    }
 
 				try {
-					writeHttpResponse(msg, httpOut);
+					Response.writeHttp(msg, httpOut);
 				} catch (IOException e) {
 					StringBuilder strBuilder = new StringBuilder(200);
 					strBuilder.append("Failed to write/forward the HTTP response to the client: ");
@@ -452,8 +402,9 @@ class ProxyThread implements Runnable {
 				}
 			}	// release semaphore
 			
-			ZapGetMethod method = (ZapGetMethod) msg.getUserObject();			
-			keepSocketOpen = notifyPersistentConnectionListener(msg, inSocket, method);
+			ZapGetMethod method = (ZapGetMethod) msg.getUserObject();		
+			
+			keepSocketOpen = notificationHttp.get("PersistentConnectionListener").notify(this.parentServer, msg, inSocket, method);
 			if (keepSocketOpen) {
 				// do not wait for close
 				break;			
@@ -462,6 +413,95 @@ class ProxyThread implements Runnable {
 		
     }
 
+    protected boolean isProcessCache(HttpMessage msg) throws IOException {
+        if (!parentServer.isEnableCacheProcessing()) {
+            return false;
+        }
+        
+        if (parentServer.getCacheProcessingList().isEmpty()) {
+            return false;
+        }
+        
+        CacheProcessingItem item = parentServer.getCacheProcessingList().get(0);
+        if (msg.equals(item.message)) {
+            HttpMessage newMsg = item.message.cloneAll();
+            msg.setResponseHeader(newMsg.getResponseHeader());
+            msg.setResponseBody(newMsg.getResponseBody());
+
+            Response.writeHttp(msg, httpOut);
+            
+            return true;
+            
+        } else {
+
+            try {
+                RecordHistory history = Model.getSingleton().getDb().getTableHistory().getHistoryCache(item.reference, msg);
+                if (history == null) {
+                    return false;
+                }
+                
+                msg.setResponseHeader(history.getHttpMessage().getResponseHeader());
+                msg.setResponseBody(history.getHttpMessage().getResponseBody());
+
+                Response.writeHttp(msg, httpOut);
+//                System.out.println("cached:" + msg.getRequestHeader().getURI().toString());
+                
+                return true;
+                
+            } catch (Exception e) {
+                return true;
+            }
+            
+        }
+        
+        
+//        return false;
+        
+    }
+    
+	protected HttpSender getHttpSender() {
+
+	    if (httpSender == null) {
+		    httpSender = new HttpSender(connectionParam, true, HttpSender.PROXY_INITIATOR);
+		}
+
+	    return httpSender;
+	}    
+
+	
+	/**
+	 * @param targethost the host where you want to connect to
+	 * @throws IOException if an error occurred while establishing the SSL/TLS connection
+	 */
+	private void beginSSL(String targethost) throws IOException {
+		// ZAP: added parameter 'targethost'
+        try {
+			inSocket = HttpSender.getSSLConnector().createTunnelServerSocket(targethost, inSocket);
+        } catch (MissingRootCertificateException e) {
+        	throw new MissingRootCertificateException(e); // throw again, cause will be catched later.
+		} catch (Exception e) {
+			// ZAP: transform for further processing 
+			throw new IOException("Error while establishing SSL connection for '" + targethost + "'!", e);
+		}
+        
+        httpIn = new HttpInputStream(inSocket);
+        httpOut = new HttpOutputStream(inSocket.getOutputStream());
+    }
+	
+	private static boolean isSslTlsHandshake(byte[] bytes) {
+		if (bytes.length < 3) {
+			throw new IllegalArgumentException("The parameter bytes must have at least 3 bytes.");
+		}
+		// Check if ContentType is handshake(22)
+		if (bytes[0] == 0x16) {
+			// Check if "valid" ProtocolVersion >= SSLv3 (TLSv1, TLSv1.1, ...) or SSLv2
+			if (bytes[1] >= 0x03 || (bytes[1] == 0x00 && bytes[2] == 0x02)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	private FilterInputStream buildStreamDecoder(String encoding, ByteArrayInputStream bais) throws IOException {
 		if (encoding.equalsIgnoreCase(HttpHeader.DEFLATE)) {
 			return new InflaterInputStream(bais, new Inflater(true));
@@ -522,140 +562,7 @@ class ProxyThread implements Runnable {
 		return false;
 	}
 	
-	protected void disconnect() {
-		try {
-            if (httpIn != null) {
-                httpIn.close();
-            }
-        } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug(e.getMessage(), e);
-            }
-        }
-        
-        try {
-            if (httpOut != null) {
-                httpOut.close();
-            }
-        } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug(e.getMessage(), e);
-            }
-        }
-
-    	HttpUtil.closeSocket(inSocket);
-        
-		if (httpSender != null) {
-            httpSender.shutdown();
-        }
-
-	}
-
-	/**
-	 * Go through each observers to process a request in each observers.
-	 * The method can be modified in each observers.
-	 * @param httpMessage the request that was received from the client and may be forwarded to the server
-	 * @return {@code true} if the message should be forwarded to the server, {@code false} otherwise
-	 */
-	private boolean notifyListenerRequestSend(HttpMessage httpMessage) {
-		if (parentServer.excludeUrl(httpMessage.getRequestHeader().getURI())) {
-			return true;
-		}
-		ProxyListener listener = null;
-		List<ProxyListener> listenerList = parentServer.getListenerList();
-		for (int i=0;i<listenerList.size();i++) {
-			listener = listenerList.get(i);
-			try {
-			    if (! listener.onHttpRequestSend(httpMessage)) {
-			    	return false;
-			    }
-			} catch (Exception e) {
-				log.error("An error occurred while notifying listener:", e);
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Go thru each observers and process the http message in each observers.
-	 * The msg can be changed by each observers.
-	 * @param httpMessage the response that was received from the server and may be forwarded to the client
-	 * @return {@code true} if the message should be forwarded to the client, {@code false} otherwise
-	 */
-	private boolean notifyListenerResponseReceive(HttpMessage httpMessage) {
-		if (parentServer.excludeUrl(httpMessage.getRequestHeader().getURI())) {
-			return true;
-		}
-		ProxyListener listener = null;
-		List<ProxyListener> listenerList = parentServer.getListenerList();
-		for (int i=0;i<listenerList.size();i++) {
-			listener = listenerList.get(i);
-			try {
-			    if (!listener.onHttpResponseReceive(httpMessage)) {
-			    	return false;
-			    }
-			} catch (Exception e) {
-				log.error("An error occurred while notifying listener:", e);
-			}
-		}
-		return true;
-	}
-	
-    private boolean notifyOverrideListenersRequestSend(HttpMessage httpMessage) {
-        for (OverrideMessageProxyListener listener : parentServer.getOverrideMessageProxyListeners()) {
-            try {
-                if (listener.onHttpRequestSend(httpMessage)) {
-                    return true;
-                }
-            } catch (Exception e) {
-                log.error("An error occurred while notifying listener:", e);
-            }
-        }
-        return false;
-    }
-
-    private boolean notifyOverrideListenersResponseReceived(HttpMessage httpMessage) {
-        for (OverrideMessageProxyListener listener : parentServer.getOverrideMessageProxyListeners()) {
-            try {
-                if (listener.onHttpResponseReceived(httpMessage)) {
-                    return true;
-                }
-            } catch (Exception e) {
-                log.error("An error occurred while notifying listener:", e);
-            }
-        }
-        return false;
-    }
-
-	/**
-	 * Go thru each listener and offer him to take over the connection. The
-	 * first observer that returns true gets exclusive rights.
-	 * 
-	 * @param httpMessage Contains HTTP request &amp; response.
-	 * @param inSocket Encapsulates the TCP connection to the browser.
-	 * @param method Provides more power to process response.
-	 * 
-	 * @return Boolean to indicate if socket should be kept open.
-	 */
-	private boolean notifyPersistentConnectionListener(HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
-		boolean keepSocketOpen = false;
-		PersistentConnectionListener listener = null;
-		List<PersistentConnectionListener> listenerList = parentServer.getPersistentConnectionListenerList();
-		for (int i=0; i<listenerList.size(); i++) {
-			listener = listenerList.get(i);
-			try {
-			    if (listener.onHandshakeResponse(httpMessage, inSocket, method)) {
-			    	// inform as long as one listener wishes to overtake the connection
-			    	keepSocketOpen = true;
-			    	break;
-			    }
-			} catch (Exception e) {
-				log.error("An error occurred while notifying listener:", e);
-			}
-		}
-		return keepSocketOpen;
-	}
-	
+    
 	/**
 	 * Tells whether or not the given {@code header} has a request to the (parent) proxy itself.
 	 * <p>
@@ -751,65 +658,9 @@ class ProxyThread implements Runnable {
         // No encodings supported in practise (HttpResponseBody needs to support them, which it doesn't, yet).
         msg.getRequestHeader().setHeader(HttpHeader.ACCEPT_ENCODING, null);
     }
-    
-	protected HttpSender getHttpSender() {
-
-	    if (httpSender == null) {
-		    httpSender = new HttpSender(connectionParam, true, HttpSender.PROXY_INITIATOR);
-		}
-
-	    return httpSender;
-	}
 
     static boolean isAnyProxyThreadRunning() {
         return !proxyThreadList.isEmpty();
     }
-    
-    protected boolean isProcessCache(HttpMessage msg) throws IOException {
-        if (!parentServer.isEnableCacheProcessing()) {
-            return false;
-        }
-        
-        if (parentServer.getCacheProcessingList().isEmpty()) {
-            return false;
-        }
-        
-        CacheProcessingItem item = parentServer.getCacheProcessingList().get(0);
-        if (msg.equals(item.message)) {
-            HttpMessage newMsg = item.message.cloneAll();
-            msg.setResponseHeader(newMsg.getResponseHeader());
-            msg.setResponseBody(newMsg.getResponseBody());
-
-            writeHttpResponse(msg, httpOut);
-            
-            return true;
-            
-        } else {
-
-            try {
-                RecordHistory history = Model.getSingleton().getDb().getTableHistory().getHistoryCache(item.reference, msg);
-                if (history == null) {
-                    return false;
-                }
-                
-                msg.setResponseHeader(history.getHttpMessage().getResponseHeader());
-                msg.setResponseBody(history.getHttpMessage().getResponseBody());
-
-                writeHttpResponse(msg, httpOut);
-//                System.out.println("cached:" + msg.getRequestHeader().getURI().toString());
-                
-                return true;
-                
-            } catch (Exception e) {
-                return true;
-            }
-            
-        }
-        
-        
-//        return false;
-        
-    }
-    
 
 }
