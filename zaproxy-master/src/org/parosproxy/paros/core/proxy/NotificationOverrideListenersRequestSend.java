@@ -25,9 +25,4 @@ public class NotificationOverrideListenersRequestSend extends NotificationHttp {
 	protected boolean getReturnStatement() {
 		return returnStatement;
 	}
-
-	@Override
-	protected boolean getExcludeStatement(ProxyServer proxyServer, HttpMessage httpMessage) {
-		return false;
-	}
 }

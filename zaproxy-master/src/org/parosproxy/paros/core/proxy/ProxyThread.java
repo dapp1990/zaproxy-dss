@@ -404,7 +404,8 @@ class ProxyThread implements Runnable {
 			
 			ZapGetMethod method = (ZapGetMethod) msg.getUserObject();		
 			
-			keepSocketOpen = notificationHttp.get("PersistentConnectionListener").notify(this.parentServer, msg, inSocket, method);
+			keepSocketOpen = ((NotificationPersistentConnectionListener) notificationHttp.get("PersistentConnectionListener")).notify(this.parentServer, msg, inSocket, method);
+			
 			if (keepSocketOpen) {
 				// do not wait for close
 				break;			

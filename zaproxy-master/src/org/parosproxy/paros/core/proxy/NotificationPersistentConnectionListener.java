@@ -17,8 +17,22 @@ public class NotificationPersistentConnectionListener extends NotificationHttp {
 
 	protected boolean keepSocketOpen = false;
 	
+	/*
 	@Override
-	protected boolean doTryStatement(Object object, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
+	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage){
+		return false;
+		
+	}
+	*/
+	
+	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
+
+		return (test(proxyServer, pxs -> doTryStatement(pxs, httpMessage, inSocket, method)));
+
+	}
+	
+	
+	private boolean doTryStatement(Object object, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
 		PersistentConnectionListener persistentConnectionListener = (PersistentConnectionListener) object;
 		 if (persistentConnectionListener.onHandshakeResponse(httpMessage, inSocket, method)) {
 		    	keepSocketOpen = true;

@@ -42,7 +42,8 @@ public class FilterHttpContent extends FilterAdaptor {
 		String content = (new PageStringContent(httpMessage)).getContent();
 		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo("resources/contentFormat.txt");
 		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFilterParameters();
-		String filterResult = (new FilterApplyer()).applyBasicStringFilter(content, parsedFormatFile);
+		FilterApplyer filterApplyer =new FilterApplyer();
+		String filterResult = filterApplyer.applyBasicStringFilter(content, parsedFormatFile);
 		httpMessage.setResponseBody(filterResult);
         
 	}

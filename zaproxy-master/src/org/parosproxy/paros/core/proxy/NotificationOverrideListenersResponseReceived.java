@@ -25,9 +25,4 @@ public class NotificationOverrideListenersResponseReceived extends NotificationH
 	protected boolean getReturnStatement() {
 		return returnStatement;
 	}
-
-	@Override
-	protected boolean getExcludeStatement(ProxyServer proxyServer, HttpMessage httpMessage) {
-		return false;
-	}
 }

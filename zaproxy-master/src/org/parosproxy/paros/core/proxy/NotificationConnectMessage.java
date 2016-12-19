@@ -21,14 +21,4 @@ public class NotificationConnectMessage extends NotificationHttp {
 	protected List<OverrideMessageProxyListener> getListener(ProxyServer proxyServer) {
 		return proxyServer.getOverrideMessageProxyListeners();
 	}
-
-	@Override
-	protected boolean getReturnStatement() {
-		return true;
-	}
-
-	@Override
-	protected boolean getExcludeStatement(ProxyServer proxyServer, HttpMessage httpMessage) {
-		return false;
-	}
 }

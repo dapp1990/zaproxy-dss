@@ -13,6 +13,15 @@ public class NotificationListenerResponseReceive extends NotificationHttp {
 	private boolean returnStatement = true;
 	
 	@Override
+	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage) {
+		if (proxyServer.excludeUrl(httpMessage.getRequestHeader().getURI())) {
+			return getReturnStatement();
+		}
+		
+		return super.notify(proxyServer, httpMessage);
+	}
+	
+	@Override
 	protected boolean doTryStatement(Object object, HttpMessage httpMessage) {
 		ProxyListener proxyListener = (ProxyListener) object;
 		 if (! proxyListener.onHttpResponseReceive(httpMessage)) {
@@ -29,10 +38,5 @@ public class NotificationListenerResponseReceive extends NotificationHttp {
 	@Override
 	protected boolean getReturnStatement() {
 		return returnStatement;
-	}
-
-	@Override
-	protected boolean getExcludeStatement(ProxyServer proxyServer, HttpMessage httpMessage) {
-		return proxyServer.excludeUrl(httpMessage.getRequestHeader().getURI());
 	}
 }

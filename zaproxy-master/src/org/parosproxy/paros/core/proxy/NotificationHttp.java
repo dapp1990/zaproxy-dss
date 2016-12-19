@@ -1,55 +1,34 @@
-// Inspiration from strategy
-// Inspiration from template
 
 package org.parosproxy.paros.core.proxy;
 
-import java.net.Socket;
 import java.util.List;
+import java.util.function.Function;
 
 import org.parosproxy.paros.network.HttpMessage;
-import org.zaproxy.zap.ZapGetMethod;
 import org.apache.log4j.Logger;
 
 public abstract class NotificationHttp {
 	
 	private static Logger log = Logger.getLogger(NotificationHttp.class);
 	
-	public final boolean notify(ProxyServer proxyServer, HttpMessage httpMessage) {
-		if (getExcludeStatement(proxyServer, httpMessage)) {
-			return getReturnStatement();
-		}
+	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage) {
 		
-		List<?> listenerList = getListener(proxyServer);
-				
-		for (int i = 0; i < listenerList.size(); i++) {
-			try {
-				if(doTryStatement(listenerList.get(i), httpMessage))
-					break;
-			} catch (Exception e) {
-				log.error("An error occurred while notifying listener:", e);
-			}
-		}
-		
-		return getReturnStatement();
+		return (test(proxyServer, pxs -> doTryStatement(pxs, httpMessage)));
 	}
 	
-	public final boolean notify(ProxyServer proxyServer, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
-		
+	public boolean test(ProxyServer proxyServer, Function<Object,Boolean> function){
 		List<?> listenerList = getListener(proxyServer);
 		
 		for (int i=0; i<listenerList.size(); i++) {
 			try {
-				if(doTryStatement(listenerList.get(i), httpMessage, inSocket, method))
+				//if(doTryStatement(listenerList.get(i), httpMessage, inSocket, method))
+				if(function.apply(listenerList.get(i)))
 					break;
 			} catch (Exception e) {
 				log.error("An error occurred while notifying listener:", e);
 			}
 		}
 		return getReturnStatement();
-	}
-
-	protected boolean doTryStatement(Object object, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
-		return false;
 	}
 
 	protected boolean doTryStatement(Object object, HttpMessage httpMessage) {
@@ -61,10 +40,6 @@ public abstract class NotificationHttp {
 	}
 
 	protected boolean getReturnStatement() {
-		return false;
-	}
-
-	protected boolean getExcludeStatement(ProxyServer proxyServer, HttpMessage httpMessage) {
 		return false;
 	}
 
