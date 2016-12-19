@@ -9,12 +9,10 @@ import java.util.List;
 public abstract class ImageDimensionStatistics extends ImageStatistics {
 	
 	private String xmlTag;
-//	private String methodName;
 	private Method dimensionMethod;
 
 	public ImageDimensionStatistics(String xmlTag, String methodName){
 		this.xmlTag = xmlTag;
-//		this.methodName = methodName;
 		try {
 			  this.dimensionMethod = HttpImage.class.getMethod(methodName);
 			} catch (SecurityException e) {  }

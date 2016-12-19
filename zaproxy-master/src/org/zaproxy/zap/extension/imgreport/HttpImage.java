@@ -18,7 +18,7 @@ public class HttpImage {
 	private String url;
 	private BufferedImage bufferedImage;
 
-	public HttpImage(HttpMessage msg){//int height, int width, int imageSize, String extension, String url, BufferedImage bufferedImage){
+	public HttpImage(HttpMessage msg){
 		//initial values in case of error
 		this.height = 0;
 		this.width = 0;

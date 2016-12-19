@@ -1,7 +1,3 @@
-// TODO Modify report.html.xsl file to get the information in HTML reports (you can find the file in zaproxy-dss/zaproxy-master/src/xml)
-// TODO Generalize methods/classes if it is possible
-// TODO Split responsibilities if it is possible
-
 package org.zaproxy.zap.extension.imgreport;
 
 import java.util.ArrayList;
@@ -21,8 +17,6 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	private static final String NAME = "ExtensionImageReport";
 	private List<HttpImage> httpImageList;
 	private List<ImageStatistics> usedImageStatistics;
-	
-	//private ResourceBundle messages = null;
 
     public ExtensionImageReport() {
         super();
@@ -35,7 +29,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 
     private void initialize() {
         this.setName(NAME);
-        this.setOrder(2222); // TODO find optimal load order
+        this.setOrder(2222);
         
         // Register as Http Sender listener in order to catch the received messages 
      	HttpSender.addListener(this);
@@ -69,7 +63,7 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
 	
 	@Override
     public String getDescription() {
-        return "Add image details to reports"; // TODO change to Constant.messages.getString(ireport.desc);
+        return "Add image details to reports"; 
     }
 	
 	/**
