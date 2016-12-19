@@ -42,10 +42,14 @@ public class ExtensionImageReport extends ExtensionAdaptor implements XmlReporte
      	
      	httpImageList = new ArrayList<HttpImage>();
      	usedImageStatistics = new ArrayList<ImageStatistics>();
-     	usedImageStatistics.add(new ImageTypeStatistics());
-     	usedImageStatistics.add(new ImageSizeStatistics());
-     	usedImageStatistics.add(new ImageWidthStatistics());
-     	usedImageStatistics.add(new ImageHeightStatistics());
+     	ImageTypeStatistics imageTypeStatistics = new ImageTypeStatistics();
+     	usedImageStatistics.add(imageTypeStatistics);
+     	ImageSizeStatistics imageSizeStatistics = new ImageSizeStatistics();
+     	usedImageStatistics.add(imageSizeStatistics);
+     	ImageWidthStatistics imageWidthStatistics = new ImageWidthStatistics();
+     	usedImageStatistics.add(imageWidthStatistics);
+     	ImageHeightStatistics imageHeightStatistics = new ImageHeightStatistics();
+     	usedImageStatistics.add(imageHeightStatistics);
     }
 
     @Override
