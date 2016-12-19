@@ -1,6 +1,9 @@
-package org.parosproxy.paros.core.proxy;
+package org.parosproxy.paros.core.proxy.notification;
 
 import java.util.List;
+
+import org.parosproxy.paros.core.proxy.OverrideMessageProxyListener;
+import org.parosproxy.paros.core.proxy.ProxyServer;
 import org.parosproxy.paros.network.HttpMessage;
 
 public class NotificationOverrideListenersResponseReceived extends NotificationHttp {

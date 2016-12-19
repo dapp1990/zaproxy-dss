@@ -38,8 +38,8 @@ public class FilterHttpContent extends FilterAdaptor {
 		if (header.isEmpty() || header.isImage() || body.length() == 0) {
 			return;		//Do nothing with the message if there is no content to filter.
 		}
-		
-		String content = (new PageStringContent(httpMessage)).getContent();
+		PageStringContent pageContent = new PageStringContent(httpMessage);
+		String content = pageContent.getContent();
 		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo("resources/contentFormat.txt");
 		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFilterParameters();
 		FilterApplyer filterApplyer =new FilterApplyer();

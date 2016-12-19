@@ -1,8 +1,9 @@
-package org.parosproxy.paros.core.proxy;
+package org.parosproxy.paros.core.proxy.notification;
 
 import java.net.Socket;
 import java.util.List;
 
+import org.parosproxy.paros.core.proxy.ProxyServer;
 import org.parosproxy.paros.network.HttpMessage;
 import org.zaproxy.zap.PersistentConnectionListener;
 import org.zaproxy.zap.ZapGetMethod;
@@ -27,7 +28,7 @@ public class NotificationPersistentConnectionListener extends NotificationHttp {
 	
 	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
 
-		return (test(proxyServer, pxs -> doTryStatement(pxs, httpMessage, inSocket, method)));
+		return (applyNotificationFunction(proxyServer, pxs -> doTryStatement(pxs, httpMessage, inSocket, method)));
 
 	}
 	

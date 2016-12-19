@@ -302,7 +302,7 @@ public class ProxyServer implements Runnable {
         listenerList.remove(listener);
     }
 
-    synchronized List<ProxyListener> getListenerList() {
+    public synchronized List<ProxyListener> getListenerList() {
         return listenerList;
     }
 
@@ -315,7 +315,7 @@ public class ProxyServer implements Runnable {
         persistentConnectionListenerList.remove(listener);
     }
 
-    synchronized List<PersistentConnectionListener> getPersistentConnectionListenerList() {
+    public synchronized List<PersistentConnectionListener> getPersistentConnectionListenerList() {
         return persistentConnectionListenerList;
     }
 
@@ -328,7 +328,7 @@ public class ProxyServer implements Runnable {
         overrideListeners.remove(listener);
     }
 
-    List<OverrideMessageProxyListener> getOverrideMessageProxyListeners() {
+    public List<OverrideMessageProxyListener> getOverrideMessageProxyListeners() {
         return overrideListeners;
     }
 

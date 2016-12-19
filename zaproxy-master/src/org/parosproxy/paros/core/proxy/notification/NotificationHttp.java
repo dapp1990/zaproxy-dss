@@ -1,9 +1,10 @@
 
-package org.parosproxy.paros.core.proxy;
+package org.parosproxy.paros.core.proxy.notification;
 
 import java.util.List;
 import java.util.function.Function;
 
+import org.parosproxy.paros.core.proxy.ProxyServer;
 import org.parosproxy.paros.network.HttpMessage;
 import org.apache.log4j.Logger;
 
@@ -13,10 +14,10 @@ public abstract class NotificationHttp {
 	
 	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage) {
 		
-		return (test(proxyServer, pxs -> doTryStatement(pxs, httpMessage)));
+		return (applyNotificationFunction(proxyServer, pxs -> doTryStatement(pxs, httpMessage)));
 	}
 	
-	public boolean test(ProxyServer proxyServer, Function<Object,Boolean> function){
+	public boolean applyNotificationFunction(ProxyServer proxyServer, Function<Object,Boolean> function){
 		List<?> listenerList = getListener(proxyServer);
 		
 		for (int i=0; i<listenerList.size(); i++) {
