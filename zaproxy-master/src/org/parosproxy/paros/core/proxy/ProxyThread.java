@@ -86,7 +86,7 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.core.proxy.notification.NotificationConnectMessage;
-import org.parosproxy.paros.core.proxy.notification.NotificationHttp;
+import org.parosproxy.paros.core.proxy.notification.ProxyListenerNotifier;
 import org.parosproxy.paros.core.proxy.notification.NotificationListenerRequestSend;
 import org.parosproxy.paros.core.proxy.notification.NotificationListenerResponseReceive;
 import org.parosproxy.paros.core.proxy.notification.NotificationOverrideListenersRequestSend;
@@ -137,7 +137,7 @@ class ProxyThread implements Runnable {
 	
 	private HttpSender 		httpSender = null;
 	private Object semaphore = this;
-	private HashMap<String, NotificationHttp> notificationHttp = new HashMap<String, NotificationHttp>();
+	private HashMap<String, ProxyListenerNotifier> notificationHttp = new HashMap<String, ProxyListenerNotifier>();
 	
 	// ZAP: New attribute to allow for skipping disconnect
 	private boolean keepSocketOpen = false;

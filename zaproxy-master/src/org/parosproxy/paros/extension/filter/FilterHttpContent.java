@@ -3,7 +3,7 @@ package org.parosproxy.paros.extension.filter;
 import java.util.ArrayList;
 
 import org.parosproxy.paros.Constant;
-import org.parosproxy.paros.extension.filter.algorithm.FilterApplyer;
+import org.parosproxy.paros.extension.filter.algorithm.StringFilterApplyer;
 import org.parosproxy.paros.extension.filter.content.PageStringContent;
 import org.parosproxy.paros.extension.filter.formatter.FormatFileToFilterInfo;
 import org.parosproxy.paros.extension.filter.formatter.InappropriateElement;
@@ -38,13 +38,8 @@ public class FilterHttpContent extends FilterAdaptor {
 		if (header.isEmpty() || header.isImage() || body.length() == 0) {
 			return;		//Do nothing with the message if there is no content to filter.
 		}
-		PageStringContent pageContent = new PageStringContent(httpMessage);
-		String content = pageContent.getContent();
-		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo("resources/contentFormat.txt");
-		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFilterParameters();
-		FilterApplyer filterApplyer =new FilterApplyer();
-		String filterResult = filterApplyer.applyBasicStringFilter(content, parsedFormatFile);
+		StringFilterApplyer filterApplyer =new StringFilterApplyer();
+		String filterResult = filterApplyer.executeFiltering(httpMessage, "resources/contentFormat.txt");
 		httpMessage.setResponseBody(filterResult);
-        
 	}
 }

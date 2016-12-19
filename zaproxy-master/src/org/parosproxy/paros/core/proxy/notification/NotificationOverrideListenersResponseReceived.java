@@ -6,7 +6,7 @@ import org.parosproxy.paros.core.proxy.OverrideMessageProxyListener;
 import org.parosproxy.paros.core.proxy.ProxyServer;
 import org.parosproxy.paros.network.HttpMessage;
 
-public class NotificationOverrideListenersResponseReceived extends NotificationHttp {
+public class NotificationOverrideListenersResponseReceived extends ProxyListenerNotifier {
 	
 	private boolean returnStatement = false;
 	

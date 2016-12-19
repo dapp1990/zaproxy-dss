@@ -8,9 +8,9 @@ import org.parosproxy.paros.core.proxy.ProxyServer;
 import org.parosproxy.paros.network.HttpMessage;
 import org.apache.log4j.Logger;
 
-public abstract class NotificationHttp {
+public abstract class ProxyListenerNotifier {
 	
-	private static Logger log = Logger.getLogger(NotificationHttp.class);
+	private static Logger log = Logger.getLogger(ProxyListenerNotifier.class);
 	
 	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage) {
 		

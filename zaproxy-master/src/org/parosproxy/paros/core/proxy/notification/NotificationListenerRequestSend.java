@@ -12,7 +12,7 @@ import org.parosproxy.paros.network.HttpMessage;
  * 
  */
 
-public class NotificationListenerRequestSend extends NotificationHttp {
+public class NotificationListenerRequestSend extends ProxyListenerNotifier {
 
 	private boolean returnStatement = true;
 	

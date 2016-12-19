@@ -14,7 +14,7 @@ import org.zaproxy.zap.ZapGetMethod;
  *
  */
 
-public class NotificationPersistentConnectionListener extends NotificationHttp {
+public class NotificationPersistentConnectionListener extends ProxyListenerNotifier {
 
 	protected boolean keepSocketOpen = false;
 	

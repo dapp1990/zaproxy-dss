@@ -8,14 +8,14 @@ import java.util.Arrays;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.parosproxy.paros.extension.filter.algorithm.FilterApplyer;
+import org.parosproxy.paros.extension.filter.algorithm.StringFilterApplyer;
 import org.parosproxy.paros.extension.filter.formatter.InappropriateElement;
 
 import javafx.util.Pair;
 
 public class FilterApplyerUnitTest {
 
-	private FilterApplyer filter;
+	private StringFilterApplyer filter;
 	private Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile;
 	
 	private String appropriateContent = "The little duck crossed the road.";
@@ -30,7 +30,7 @@ public class FilterApplyerUnitTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		filter = new FilterApplyer();
+		filter = new StringFilterApplyer();
 		parsedFormatFile = new Pair<Integer, ArrayList<InappropriateElement<String>>>(threshold, new ArrayList<InappropriateElement<String>>(Arrays.asList(inapEl1, inapEl2, inapEl3, inapEl4)));
 	}
 
