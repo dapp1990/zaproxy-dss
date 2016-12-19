@@ -107,712 +107,656 @@ import org.zaproxy.zap.view.ContextPanelFactory;
 
 public class ExtensionLoader {
 
-    private final List<Extension> extensionList = new ArrayList<>();
-    private final Map<Class<? extends Extension>, Extension> extensionsMap = new HashMap<>();
-    private final Map<Extension, ExtensionHook> extensionHooks = new HashMap<>();
-    private Model model = null;
-    private HookProxyLinkerManager hookProxyLinkerManager;
+	private final List<Extension> extensionList = new ArrayList<>();
+	private final Map<Class<? extends Extension>, Extension> extensionsMap = new HashMap<>();
+	private final Map<Extension, ExtensionHook> extensionHooks = new HashMap<>();
+	private Model model = null;
+	private HookProxyLinkerManager hookProxyLinkerManager;
 
-    private View view = null;
-    private static final Logger logger = Logger.getLogger(ExtensionLoader.class);
+	private View view = null;
+	private static final Logger logger = Logger.getLogger(ExtensionLoader.class);
 
-    public ExtensionLoader(Model model, View view) {
-        this.model = model;
-        this.view = view;
-        hookProxyLinkerManager = new HookProxyLinkerManager(Control.getSingleton().getProxy());
-    }
-    
-    public List<ExtensionHook> getExtensionHooks() {
-    	return new ArrayList<ExtensionHook>(extensionHooks.values());
-    }
+	public ExtensionLoader(Model model, View view) {
+		this.model = model;
+		this.view = view;
+		hookProxyLinkerManager = new HookProxyLinkerManager(Control.getSingleton().getProxy());
+	}
 
-    public void addExtension(Extension extension) {
-        extensionList.add(extension);
-        extensionsMap.put(extension.getClass(), extension);
-    }
+	public List<ExtensionHook> getExtensionHooks() {
+		return new ArrayList<ExtensionHook>(extensionHooks.values());
+	}
 
-    public void destroyAllExtension() {
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                getExtension(i).destroy();
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
+	public void addExtension(Extension extension) {
+		extensionList.add(extension);
+		extensionsMap.put(extension.getClass(), extension);
+	}
 
-    }
+	public void destroyAllExtension() {
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				getExtension(i).destroy();
 
-    public Extension getExtension(int i) {
-        return extensionList.get(i);
-    }
-
-    public Extension getExtension(String name) {
-        if (name != null) {
-            for (int i = 0; i < extensionList.size(); i++) {
-                Extension p = getExtension(i);
-                if (p.getName().equalsIgnoreCase(name)) {
-                    return p;
-                }
-            }
-        }
-        
-        return null;
-    }
-
-    public Extension getExtensionByClassName(String name) {
-        if (name != null) {
-            for (int i = 0; i < extensionList.size(); i++) {
-                Extension p = getExtension(i);
-                if (p.getClass().getName().equals(name)) {
-                    return p;
-                }
-            }
-        }
-        
-        return null;
-    }
-
-    /**
-     * Gets the {@code Extension} with the given class.
-     *
-     * @param clazz the class of the {@code Extension}
-     * @return the {@code Extension} or {@code null} if not found.
-     */
-    public <T extends Extension> T getExtension(Class<T> clazz) {
-        if (clazz != null) {
-            Extension extension = extensionsMap.get(clazz);
-            if (extension != null) {
-                return clazz.cast(extension);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Tells whether or not an {@code Extension} with the given
-     * {@code extensionName} is enabled.
-     *
-     * @param extensionName the name of the extension
-     * @return {@code true} if the extension is enabled, {@code false}
-     * otherwise.
-     * @throws IllegalArgumentException if the {@code extensionName} is
-     * {@code null}.
-     * @see #getExtension(String)
-     * @see Extension
-     */
-    public boolean isExtensionEnabled(String extensionName) {
-        if (extensionName == null) {
-            throw new IllegalArgumentException("Parameter extensionName must not be null.");
-        }
-
-        Extension extension = getExtension(extensionName);
-        if (extension == null) {
-            return false;
-        }
-        
-        return extension.isEnabled();
-    }
-
-    public int getExtensionCount() {
-        return extensionList.size();
-    }
-
-    /**
-     * Hooks (adds) the {@code ConnectRequestProxyListener}s of the loaded extensions to the given {@code proxy}.
-     * <p>
-     * <strong>Note:</strong> even if public this method is expected to be called only by core classes (for example,
-     * {@code Control}).
-     *
-     * @param proxy the local proxy
-     * @since 2.5.0
-     */
-
-    // ZAP: Added support for site map listeners
-
-    // ZAP: method called by the scanner to load all scanner hooks. 
-    public void hookScannerHook(Scanner scan) {
-        Iterator<ExtensionHook> iter = extensionHooks.values().iterator();
-        while (iter.hasNext()) {
-            ExtensionHook hook = iter.next();
-            List<ScannerHook> scannerHookList = hook.getScannerHookList();
-
-            for (ScannerHook scannerHook : scannerHookList) {
-                try {
-                    if (hook != null) {
-                        scan.addScannerHook(scannerHook);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    public void optionsChangedAllPlugin(OptionsParam options) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<OptionsChangedListener> listenerList = hook.getOptionsChangedListenerList();
-            for (OptionsChangedListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        listener.optionsChanged(options);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    public void runCommandLine() {
-        Extension ext;
-        for (int i = 0; i < getExtensionCount(); i++) {
-            ext = getExtension(i);
-            if (ext instanceof CommandLineListener) {
-                CommandLineListener listener = (CommandLineListener) ext;
-                listener.execute(extensionHooks.get(ext).getCommandLineArgument());
-            }
-        }
-    }
-
-    public void sessionChangedAllPlugin(Session session) {
-        logger.debug("sessionChangedAllPlugin");
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<SessionChangedListener> listenerList = hook.getSessionListenerList();
-            for (SessionChangedListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        listener.sessionChanged(session);
-                    }
-
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    public void databaseOpen(Database db) {
-        Extension ext;
-        for (int i = 0; i < getExtensionCount(); i++) {
-            ext = getExtension(i);
-            try {
-				ext.databaseOpen(db);
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
 			}
-        }
-    }
+		}
 
-    public void sessionAboutToChangeAllPlugin(Session session) {
-        logger.debug("sessionAboutToChangeAllPlugin");
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<SessionChangedListener> listenerList = hook.getSessionListenerList();
-            for (SessionChangedListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        listener.sessionAboutToChange(session);
-                    }
+	}
 
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
+	public Extension getExtension(int i) {
+		return extensionList.get(i);
+	}
 
-    public void sessionScopeChangedAllPlugin(Session session) {
-        logger.debug("sessionScopeChangedAllPlugin");
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<SessionChangedListener> listenerList = hook.getSessionListenerList();
-            for (SessionChangedListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        listener.sessionScopeChanged(session);
-                    }
+	public Extension getExtension(String name) {
+		if (name != null) {
+			for (int i = 0; i < extensionList.size(); i++) {
+				Extension p = getExtension(i);
+				if (p.getName().equalsIgnoreCase(name)) {
+					return p;
+				}
+			}
+		}
 
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
+		return null;
+	}
 
-    public void sessionModeChangedAllPlugin(Mode mode) {
-        logger.debug("sessionModeChangedAllPlugin");
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<SessionChangedListener> listenerList = hook.getSessionListenerList();
-            for (SessionChangedListener listener : listenerList) {
-                try {
-                    if (listener != null) {
-                        listener.sessionModeChanged(mode);
-                    }
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
+	public Extension getExtensionByClassName(String name) {
+		if (name != null) {
+			for (int i = 0; i < extensionList.size(); i++) {
+				Extension p = getExtension(i);
+				if (p.getClass().getName().equals(name)) {
+					return p;
+				}
+			}
+		}
 
-    public void addonFilesAdded() {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<AddonFilesChangedListener> listenerList = hook.getAddonFilesChangedListener();
-            for (AddonFilesChangedListener listener : listenerList) {
-                try {
-                    listener.filesAdded();
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
+		return null;
+	}
 
-    public void addonFilesRemoved() {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            List<AddonFilesChangedListener> listenerList = hook.getAddonFilesChangedListener();
-            for (AddonFilesChangedListener listener : listenerList) {
-                try {
-                    listener.filesRemoved();
-                    
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
-    
-    /**
-     * Notifies {@code Extension}s' {@code AddOnInstallationStatusListener}s that the given add-on was installed.
-     *
-     * @param addOn the add-on that was installed, must not be {@code null}
-     * @since 2.5.0
-     */
-    public void addOnInstalled(AddOn addOn) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            for (AddOnInstallationStatusListener listener : hook.getAddOnInstallationStatusListeners()) {
-                try {
-                    listener.addOnInstalled(addOn);
-                } catch (Exception e) {
-                    logger.error("An error occurred while notifying: " + listener.getClass().getCanonicalName(), e);
-                }
-            }
-        }
-    }
+	/**
+	 * Gets the {@code Extension} with the given class.
+	 *
+	 * @param clazz the class of the {@code Extension}
+	 * @return the {@code Extension} or {@code null} if not found.
+	 */
+	public <T extends Extension> T getExtension(Class<T> clazz) {
+		if (clazz != null) {
+			Extension extension = extensionsMap.get(clazz);
+			if (extension != null) {
+				return clazz.cast(extension);
+			}
+		}
+		return null;
+	}
 
-    /**
-     * Notifies {@code Extension}s' {@code AddOnInstallationStatusListener}s that the given add-on was soft uninstalled.
-     *
-     * @param addOn the add-on that was soft uninstalled, must not be {@code null}
-     * @param successfully if the soft uninstallation was successful, that is, no errors occurred while uninstalling it
-     * @since 2.5.0
-     */
-    public void addOnSoftUninstalled(AddOn addOn, boolean successfully) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            for (AddOnInstallationStatusListener listener : hook.getAddOnInstallationStatusListeners()) {
-                try {
-                    listener.addOnSoftUninstalled(addOn, successfully);
-                } catch (Exception e) {
-                    logger.error("An error occurred while notifying: " + listener.getClass().getCanonicalName(), e);
-                }
-            }
-        }
-    }
+	/**
+	 * Tells whether or not an {@code Extension} with the given
+	 * {@code extensionName} is enabled.
+	 *
+	 * @param extensionName the name of the extension
+	 * @return {@code true} if the extension is enabled, {@code false}
+	 * otherwise.
+	 * @throws IllegalArgumentException if the {@code extensionName} is
+	 * {@code null}.
+	 * @see #getExtension(String)
+	 * @see Extension
+	 */
+	public boolean isExtensionEnabled(String extensionName) {
+		if (extensionName == null) {
+			throw new IllegalArgumentException("Parameter extensionName must not be null.");
+		}
 
-    /**
-     * Notifies {@code Extension}s' {@code AddOnInstallationStatusListener}s that the given add-on was uninstalled.
-     *
-     * @param addOn the add-on that was uninstalled, must not be {@code null}
-     * @param successfully if the uninstallation was successful, that is, no errors occurred while uninstalling it
-     * @since 2.5.0
-     */
-    public void addOnUninstalled(AddOn addOn, boolean successfully) {
-        for (ExtensionHook hook : extensionHooks.values()) {
-            for (AddOnInstallationStatusListener listener : hook.getAddOnInstallationStatusListeners()) {
-                try {
-                    listener.addOnUninstalled(addOn, successfully);
-                } catch (Exception e) {
-                    logger.error("An error occurred while notifying: " + listener.getClass().getCanonicalName(), e);
-                }
-            }
-        }
-    }
+		Extension extension = getExtension(extensionName);
+		if (extension == null) {
+			return false;
+		}
 
-    public void startAllExtension(double progressFactor) {
-        double factorPerc = progressFactor / getExtensionCount();
-        
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                getExtension(i).start();
-                if (view != null) {
-                    view.addSplashScreenLoadingCompletion(factorPerc);
-                }
+		return extension.isEnabled();
+	}
 
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
+	public int getExtensionCount() {
+		return extensionList.size();
+	}
 
-    /**
-     * Initialize and start all Extensions
-     * This function loops for all getExtensionCount() exts
-     * launching each specific initialization element (model, xml, view, hook, etc.)
-     */
-    public void startLifeCycle() {
-        
-        // Percentages are passed into the calls as doubles
-    	if (view != null) {
-    		view.setSplashScreenLoadingCompletion(0.0);
-    	}
+	/**
+	 * Hooks (adds) the {@code ConnectRequestProxyListener}s of the loaded extensions to the given {@code proxy}.
+	 * <p>
+	 * <strong>Note:</strong> even if public this method is expected to be called only by core classes (for example,
+	 * {@code Control}).
+	 *
+	 * @param proxy the local proxy
+	 * @since 2.5.0
+	 */
 
-        // Step 3: initialize all (slow)
-        initAllExtension(5.0);
-        // Step 4: initialize models (quick)
-        initModelAllExtension(model, 0.0);
-        // Step 5: initialize xmls (quick)
-        initXMLAllExtension(model.getSession(), model.getOptionsParam(), 0.0);
-        // Step 6: initialize viewes (slow)
-        initViewAllExtension(view, 10.0);
-        // Step 7: initialize hooks (slowest)
-        hookAllExtension(75.0);
-        // Step 8: start all extensions(quick)
-        startAllExtension(10.0);
-    }
+	// ZAP: Added support for site map listeners
 
-    /**
-     * Initialize a specific Extension
-     * @param ext the Extension that need to be initialized
-     * @throws DatabaseUnsupportedException 
-     * @throws DatabaseException 
-     */
-    public void startLifeCycle(Extension ext) throws DatabaseException, DatabaseUnsupportedException {
-        ext.init();
-        ext.databaseOpen(model.getDb());
-        ext.initModel(model);
-        ext.initXML(model.getSession(), model.getOptionsParam());
-        ext.initView(view);
-        
-        ExtensionHook extHook = new ExtensionHook(model, view);
-        try {
-            ext.hook(extHook);
-            extensionHooks.put(ext, extHook);
+	// ZAP: method called by the scanner to load all scanner hooks. 
+	public void hookScannerHook(Scanner scan) {
+		Iterator<ExtensionHook> iter = extensionHooks.values().iterator();
+		while (iter.hasNext()) {
+			ExtensionHook hook = iter.next();
+			List<ScannerHook> scannerHookList = hook.getScannerHookList();
 
-            hookContextDataFactories(ext, extHook);
-            hookApiImplementors(ext, extHook);
+			for (ScannerHook scannerHook : scannerHookList) {
+				try {
+					if (hook != null) {
+						scan.addScannerHook(scannerHook);
+					}
 
-            if (view != null) {
-                // no need to hook view if no GUI
-                hookView(ext, view, extHook);
-                hookMenu(view, extHook);
-            }
-            
-            hookOptions(extHook);
-            ext.optionsLoaded();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        
-        ext.start();
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+	}
 
-        Proxy proxy = Control.getSingleton().getProxy();
-        hookProxyLinkerManager.hookProxyListener();
+	public void runCommandLine() {
+		Extension ext;
+		for (int i = 0; i < getExtensionCount(); i++) {
+			ext = getExtension(i);
+			if (ext instanceof CommandLineListener) {
+				CommandLineListener listener = (CommandLineListener) ext;
+				listener.execute(extensionHooks.get(ext).getCommandLineArgument());
+			}
+		}
+	}
 
-//        hookPersistentConnectionListeners(proxy, extHook.getPersistentConnectionListener());
-//        hookConnectRequestProxyListeners(proxy, extHook.getConnectRequestProxyListeners());
-        hookProxyLinkerManager.hookPersistentConnectionListener();
-        hookProxyLinkerManager.hookConnectRequestProxyListener();
+	public void databaseOpen(Database db) {
+		Extension ext;
+		for (int i = 0; i < getExtensionCount(); i++) {
+			ext = getExtension(i);
+			try {
+				ext.databaseOpen(db);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+	}
 
-        if (view != null) {
-//            hookSiteMapListeners(view.getSiteTreePanel(), extHook.getSiteMapListenerList());
-        	hookProxyLinkerManager.hookSiteMapListener(view.getSiteTreePanel());
-        }
-    }
+	public void sessionAboutToChangeAllPlugin(Session session) {
+		logger.debug("sessionAboutToChangeAllPlugin");
+		notifyEvent(listener -> listener.sessionAboutToChange(session));
+	}
 
-    public void stopAllExtension() {
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                getExtension(i).stop();
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
+	public void sessionChangedAllPlugin(Session session) {
+		logger.debug("sessionChangedAllPlugin");
+		notifyEvent(listener -> listener.sessionChanged(session));
+	}
 
-    }
+	public void sessionScopeChangedAllPlugin(Session session) {
+		logger.debug("sessionScopeChangedAllPlugin");
+		notifyEvent(listener -> listener.sessionScopeChanged(session));
+	}
 
-    // ZAP: Added the type argument.
-    private void addParamPanel(List<AbstractParamPanel> panelList, AbstractParamDialog dialog) {
-        String[] ROOT = {};
-        for (AbstractParamPanel panel : panelList) {
-            try {
-                dialog.addParamPanel(ROOT, panel, true);
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
+	public void sessionModeChangedAllPlugin(Mode mode) {
+		logger.debug("sessionModeChangedAllPlugin");
+		notifyEvent(listener -> listener.sessionModeChanged(mode));
+	}
 
-    }
+	public void addonFilesAdded() {
+		notifyAddOnEvent(listener -> listener.filesAdded());
+	}
 
-    private void removeParamPanel(List<AbstractParamPanel> panelList, AbstractParamDialog dialog) {
-        for (AbstractParamPanel panel : panelList) {
-            try {
-                dialog.removeParamPanel(panel);
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-        dialog.revalidate();
-    }
+	public void addonFilesRemoved() {
+		notifyAddOnEvent(listener -> listener.filesRemoved());
+	}
 
-    private void hookAllExtension(double progressFactor) {
-        final double factorPerc = progressFactor / getExtensionCount();
-        
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                final Extension ext = getExtension(i);
-                logger.info("Initializing " + ext.getDescription());
-                final ExtensionHook extHook = new ExtensionHook(model, view);
-                ext.hook(extHook);
-                extensionHooks.put(ext, extHook);
+	/**
+	 * Notifies {@code Extension}s' {@code AddOnInstallationStatusListener}s that the given add-on was installed.
+	 *
+	 * @param addOn the add-on that was installed, must not be {@code null}
+	 * @since 2.5.0
+	 */
+	public void addOnInstalled(AddOn addOn) {
+		notifyInstallEvent(listener -> listener.addOnInstalled(addOn));
+	}
 
-                hookContextDataFactories(ext, extHook);
-                hookApiImplementors(ext, extHook);
+	/**
+	 * Notifies {@code Extension}s' {@code AddOnInstallationStatusListener}s that the given add-on was soft uninstalled.
+	 *
+	 * @param addOn the add-on that was soft uninstalled, must not be {@code null}
+	 * @param successfully if the soft uninstallation was successful, that is, no errors occurred while uninstalling it
+	 * @since 2.5.0
+	 */
+	public void addOnSoftUninstalled(AddOn addOn, boolean successfully) {
+		notifyInstallEvent(listener -> listener.addOnSoftUninstalled(addOn, successfully));
+	}
 
-                if (view != null) {
-                    EventQueue.invokeAndWait(new Runnable() {
+	/**
+	 * Notifies {@code Extension}s' {@code AddOnInstallationStatusListener}s that the given add-on was uninstalled.
+	 *
+	 * @param addOn the add-on that was uninstalled, must not be {@code null}
+	 * @param successfully if the uninstallation was successful, that is, no errors occurred while uninstalling it
+	 * @since 2.5.0
+	 */
+	public void addOnUninstalled(AddOn addOn, boolean successfully) {
+		notifyInstallEvent(listener -> listener.addOnUninstalled(addOn, successfully));
+	}
 
-                        @Override
-                        public void run() {
-                            // no need to hook view if no GUI
-                            hookView(ext, view, extHook);
-                            hookMenu(view, extHook);
-                            view.addSplashScreenLoadingCompletion(factorPerc);
-                        }
-                    });
-                }
-                
-                hookOptions(extHook);
-                ext.optionsLoaded();
-                
-            } catch (Throwable e) {
-                // Catch Errors thrown by out of date extensions as well as Exceptions
-                logger.error(e.getMessage(), e);
-            }
-        }
-        // Call postInit for all extensions after they have all been initialized
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                getExtension(i).postInit();
-            } catch (Throwable e) {
-                // Catch Errors thrown by out of date extensions as well as Exceptions
-                logger.error(e.getMessage(), e);
-            }
-        }
+	public void optionsChangedAllPlugin(OptionsParam options) {
+		for (ExtensionHook hook : extensionHooks.values()) {
+			List<OptionsChangedListener> listenerList = hook.getOptionsChangedListenerList();
+			for (OptionsChangedListener listener : listenerList) {
+				try {
+					if (listener != null) {
+						listener.optionsChanged(options);
+					}
 
-        if (view != null) {
-            view.getMainFrame().getMainMenuBar().validate();
-            view.getMainFrame().validate();
-        }
-    }
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+	}
 
-    private void hookContextDataFactories(Extension extension, ExtensionHook extHook) {
-        for (ContextDataFactory contextDataFactory : extHook.getContextDataFactories()) {
-            try {
-                model.addContextDataFactory(contextDataFactory);
-            } catch (Exception e) {
-                logger.error("Error while adding a ContextDataFactory from " + extension.getClass().getCanonicalName(), e);
-            }
-        }
-    }
+	private void notifyEvent(Consumer<SessionChangedListener> executer) {
+		notifyEvent(executer, hook -> hook.getSessionListenerList());
+	}
 
-    private void hookApiImplementors(Extension extension, ExtensionHook extHook) {
-        for (ApiImplementor apiImplementor : extHook.getApiImplementors()) {
-            try {
-                API.getInstance().registerApiImplementor(apiImplementor);
-            } catch (Exception e) {
-                logger.error("Error while adding an ApiImplementor from " + extension.getClass().getCanonicalName(), e);
-            }
-        }
-    }
+	private void notifyAddOnEvent(Consumer<AddonFilesChangedListener> executer) {
+		notifyEvent(executer, hook -> hook.getAddonFilesChangedListener());
+	}
 
-    /**
-     * Hook command line listener with the command line processor
-     *
-     * @param cmdLine
-     * @throws java.lang.Exception
-     */
-    public void hookCommandLineListener(CommandLine cmdLine) throws Exception {
-        List<CommandLineArgument[]> allCommandLineList = new ArrayList<>();
-        Map<String, CommandLineListener> extMap = new HashMap<>();
-        for (Map.Entry<Extension, ExtensionHook> entry : extensionHooks.entrySet()) {
-            ExtensionHook hook = entry.getValue();
-            CommandLineArgument[] arg = hook.getCommandLineArgument();
-            if (arg.length > 0) {
-                allCommandLineList.add(arg);
-            }
-            
-            Extension extension = entry.getKey();
-            if (extension instanceof CommandLineListener) {
-                CommandLineListener cli = (CommandLineListener) extension;
-                List<String> exts = cli.getHandledExtensions();
-                if (exts != null) {
-                    for (String ext : exts) {
-                        extMap.put(ext, cli);
-                    }
-                }
-            }
-        }
+	private <T> void notifyEvent(Consumer<T> executer, Function<ExtensionHook, List<T>> hookToList) {//List<T> listenerList) {
+		for (ExtensionHook hook : extensionHooks.values()) {
+			List<T> listenerList = hookToList.apply(hook);
+			for (T listener : listenerList) {
+				try {
+					if (listener != null) {
+						executer.accept(listener);
+					}
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+	}
 
-        cmdLine.parse(allCommandLineList, extMap);
-    }
+	private void notifyInstallEvent(Consumer<AddOnInstallationStatusListener> executer) {
+		for (ExtensionHook hook : extensionHooks.values()) {
+			List<AddOnInstallationStatusListener> listenerList = hook.getAddOnInstallationStatusListeners();
+			for (AddOnInstallationStatusListener listener : listenerList) {
+				try {
+					executer.accept(listener);
+				} catch (Exception e) {
+					logger.error("An error occurred while notifying: " + listener.getClass().getCanonicalName(), e);
+				}
+			}
+		}
+	}
 
-    private void hookMenu(View view, ExtensionHook hook) {
-        if (view == null) {
-            return;
-        }
+	public void startAllExtension(double progressFactor) {
+		double factorPerc = progressFactor / getExtensionCount();
 
-        ExtensionHookMenu hookMenu = hook.getHookMenu();
-        if (hookMenu == null) {
-            return;
-        }
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				getExtension(i).start();
+				if (view != null) {
+					view.addSplashScreenLoadingCompletion(factorPerc);
+				}
 
-        MainMenuBar menuBar = view.getMainFrame().getMainMenuBar();
-        MenuHandler mh = new MenuHandler();
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+	}
 
-        // 2 menus at the back (Tools/Help)
-        mh.addMenuHelper(menuBar, hookMenu.getNewMenus(), 2);
+	/**
+	 * Initialize and start all Extensions
+	 * This function loops for all getExtensionCount() exts
+	 * launching each specific initialization element (model, xml, view, hook, etc.)
+	 */
+	public void startLifeCycle() {
 
-        mh.addMenuHelper(menuBar.getMenuFile(), hookMenu.getFile(), 2);
-        mh.addMenuHelper(menuBar.getMenuTools(), hookMenu.getTools(), 2);
-        mh.addMenuHelper(menuBar.getMenuEdit(), hookMenu.getEdit());
-        mh.addMenuHelper(menuBar.getMenuView(), hookMenu.getView());
-        mh.addMenuHelper(menuBar.getMenuAnalyse(), hookMenu.getAnalyse());
-        mh.addMenuHelper(menuBar.getMenuHelp(), hookMenu.getHelpMenus());
-        mh.addMenuHelper(menuBar.getMenuReport(), hookMenu.getReportMenus());
-        mh.addMenuHelper(menuBar.getMenuOnline(), hookMenu.getOnlineMenus());
+		// Percentages are passed into the calls as doubles
+		if (view != null) {
+			view.setSplashScreenLoadingCompletion(0.0);
+		}
 
-        mh.addMenuHelper(view.getPopupList(), hookMenu.getPopupMenus());
-    }
+		// Step 3: initialize all (slow)
+		initAllExtension(5.0);
+		// Step 4: initialize models (quick)
+		initModelAllExtension(model, 0.0);
+		// Step 5: initialize xmls (quick)
+		initXMLAllExtension(model.getSession(), model.getOptionsParam(), 0.0);
+		// Step 6: initialize viewes (slow)
+		initViewAllExtension(view, 10.0);
+		// Step 7: initialize hooks (slowest)
+		hookAllExtension(75.0);
+		// Step 8: start all extensions(quick)
+		startAllExtension(10.0);
+	}
 
-    
+	/**
+	 * Initialize a specific Extension
+	 * @param ext the Extension that need to be initialized
+	 * @throws DatabaseUnsupportedException 
+	 * @throws DatabaseException 
+	 */
+	public void startLifeCycle(Extension ext) throws DatabaseException, DatabaseUnsupportedException {
+		ext.init();
+		ext.databaseOpen(model.getDb());
+		ext.initModel(model);
+		ext.initXML(model.getSession(), model.getOptionsParam());
+		ext.initView(view);
 
-    private void hookOptions(ExtensionHook hook) {
-        List<AbstractParam> list = hook.getOptionsParamSetList();
-        
-        for (AbstractParam paramSet : list) {
-            try {
-                model.getOptionsParam().addParamSet(paramSet);
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
+		ExtensionHook extHook = new ExtensionHook(model, view);
+		try {
+			ext.hook(extHook);
+			extensionHooks.put(ext, extHook);
 
-    private void unloadOptions(ExtensionHook hook) {
-        List<AbstractParam> list = hook.getOptionsParamSetList();
+			hookContextDataFactories(ext, extHook);
+			hookApiImplementors(ext, extHook);
 
-        for (AbstractParam paramSet : list) {
-            try {
-                model.getOptionsParam().removeParamSet(paramSet);
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
+			if (view != null) {
+				// no need to hook view if no GUI
+				hookView(ext, view, extHook);
+				hookMenu(view, extHook);
+			}
 
-    private void hookView(Extension extension, View view, ExtensionHook hook) {
-        if (view == null) {
-            return;
-        }
+			hookOptions(extHook);
+			ext.optionsLoaded();
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
 
-        ExtensionHookView pv = hook.getHookView();
-        if (pv == null) {
-            return;
-        }
+		ext.start();
 
-        for (ContextPanelFactory contextPanelFactory : pv.getContextPanelFactories()) {
-            try {
-                view.addContextPanelFactory(contextPanelFactory);
-            } catch (Exception e) {
-                logger.error("Error while adding a ContextPanelFactory from " + extension.getClass().getCanonicalName(), e);
-            }
-        }
+		Proxy proxy = Control.getSingleton().getProxy();
+		hookProxyLinkerManager.hookProxyListener();
 
-        view.getWorkbench().addPanels(pv.getSelectPanel(), WorkbenchPanel.PanelType.SELECT);
-        view.getWorkbench().addPanels(pv.getWorkPanel(), WorkbenchPanel.PanelType.WORK);
-        view.getWorkbench().addPanels(pv.getStatusPanel(), WorkbenchPanel.PanelType.STATUS);
+		//        hookPersistentConnectionListeners(proxy, extHook.getPersistentConnectionListener());
+		//        hookConnectRequestProxyListeners(proxy, extHook.getConnectRequestProxyListeners());
+		hookProxyLinkerManager.hookPersistentConnectionListener();
+		hookProxyLinkerManager.hookConnectRequestProxyListener();
 
-        addParamPanel(pv.getSessionPanel(), view.getSessionDialog());
-        addParamPanel(pv.getOptionsPanel(), view.getOptionsDialog(""));
-    }
+		if (view != null) {
+			//            hookSiteMapListeners(view.getSiteTreePanel(), extHook.getSiteMapListenerList());
+			hookProxyLinkerManager.hookSiteMapListener(view.getSiteTreePanel());
+		}
+	}
 
-    private void removeView(Extension extension, View view, ExtensionHook hook) {
-        if (view == null) {
-            return;
-        }
+	public void stopAllExtension() {
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				getExtension(i).stop();
 
-        ExtensionHookView pv = hook.getHookView();
-        if (pv == null) {
-            return;
-        }
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
 
-        for (ContextPanelFactory contextPanelFactory : pv.getContextPanelFactories()) {
-            try {
-                view.removeContextPanelFactory(contextPanelFactory);
-            } catch (Exception e) {
-                logger.error("Error while removing a ContextPanelFactory from " + extension.getClass().getCanonicalName(), e);
-            }
-        }
+	}
 
-        view.getWorkbench().removePanels(pv.getSelectPanel(), WorkbenchPanel.PanelType.SELECT);
-        view.getWorkbench().removePanels(pv.getWorkPanel(), WorkbenchPanel.PanelType.WORK);
-        view.getWorkbench().removePanels(pv.getStatusPanel(), WorkbenchPanel.PanelType.STATUS);
+	// ZAP: Added the type argument.
+	private void addParamPanel(List<AbstractParamPanel> panelList, AbstractParamDialog dialog) {
+		String[] ROOT = {};
+		for (AbstractParamPanel panel : panelList) {
+			try {
+				dialog.addParamPanel(ROOT, panel, true);
 
-        removeParamPanel(pv.getSessionPanel(), view.getSessionDialog());
-        removeParamPanel(pv.getOptionsPanel(), view.getOptionsDialog(""));
-    }
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
 
-    public void removeStatusPanel(AbstractPanel panel) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getWorkbench().removePanel(panel, WorkbenchPanel.PanelType.STATUS);
-    }
+	}
 
-    public void removeOptionsPanel(AbstractParamPanel panel) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getOptionsDialog("").removeParamPanel(panel);
-    }
+	private void removeParamPanel(List<AbstractParamPanel> panelList, AbstractParamDialog dialog) {
+		for (AbstractParamPanel panel : panelList) {
+			try {
+				dialog.removeParamPanel(panel);
 
-    public void removeOptionsParamSet(AbstractParam params) {
-        model.getOptionsParam().removeParamSet(params);
-    }
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+		dialog.revalidate();
+	}
 
-    public void removeWorkPanel(AbstractPanel panel) {
-        if (!View.isInitialised()) {
-            return;
-        }
-        
-        View.getSingleton().getWorkbench().removePanel(panel, WorkbenchPanel.PanelType.WORK);
-    }
+	private void hookAllExtension(double progressFactor) {
+		final double factorPerc = progressFactor / getExtensionCount();
 
-    /**
-     * Init all extensions
-     */
-    private void initAllExtension(double progressFactor) {
-    	initExtension(i -> {
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				final Extension ext = getExtension(i);
+				logger.info("Initializing " + ext.getDescription());
+				final ExtensionHook extHook = new ExtensionHook(model, view);
+				ext.hook(extHook);
+				extensionHooks.put(ext, extHook);
+
+				hookContextDataFactories(ext, extHook);
+				hookApiImplementors(ext, extHook);
+
+				if (view != null) {
+					EventQueue.invokeAndWait(new Runnable() {
+
+						@Override
+						public void run() {
+							// no need to hook view if no GUI
+							hookView(ext, view, extHook);
+							hookMenu(view, extHook);
+							view.addSplashScreenLoadingCompletion(factorPerc);
+						}
+					});
+				}
+
+				hookOptions(extHook);
+				ext.optionsLoaded();
+
+			} catch (Throwable e) {
+				// Catch Errors thrown by out of date extensions as well as Exceptions
+				logger.error(e.getMessage(), e);
+			}
+		}
+		// Call postInit for all extensions after they have all been initialized
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				getExtension(i).postInit();
+			} catch (Throwable e) {
+				// Catch Errors thrown by out of date extensions as well as Exceptions
+				logger.error(e.getMessage(), e);
+			}
+		}
+
+		if (view != null) {
+			view.getMainFrame().getMainMenuBar().validate();
+			view.getMainFrame().validate();
+		}
+	}
+
+	private void hookContextDataFactories(Extension extension, ExtensionHook extHook) {
+		for (ContextDataFactory contextDataFactory : extHook.getContextDataFactories()) {
+			try {
+				model.addContextDataFactory(contextDataFactory);
+			} catch (Exception e) {
+				logger.error("Error while adding a ContextDataFactory from " + extension.getClass().getCanonicalName(), e);
+			}
+		}
+	}
+
+	private void hookApiImplementors(Extension extension, ExtensionHook extHook) {
+		for (ApiImplementor apiImplementor : extHook.getApiImplementors()) {
+			try {
+				API.getInstance().registerApiImplementor(apiImplementor);
+			} catch (Exception e) {
+				logger.error("Error while adding an ApiImplementor from " + extension.getClass().getCanonicalName(), e);
+			}
+		}
+	}
+
+	/**
+	 * Hook command line listener with the command line processor
+	 *
+	 * @param cmdLine
+	 * @throws java.lang.Exception
+	 */
+	public void hookCommandLineListener(CommandLine cmdLine) throws Exception {
+		List<CommandLineArgument[]> allCommandLineList = new ArrayList<>();
+		Map<String, CommandLineListener> extMap = new HashMap<>();
+		for (Map.Entry<Extension, ExtensionHook> entry : extensionHooks.entrySet()) {
+			ExtensionHook hook = entry.getValue();
+			CommandLineArgument[] arg = hook.getCommandLineArgument();
+			if (arg.length > 0) {
+				allCommandLineList.add(arg);
+			}
+
+			Extension extension = entry.getKey();
+			if (extension instanceof CommandLineListener) {
+				CommandLineListener cli = (CommandLineListener) extension;
+				List<String> exts = cli.getHandledExtensions();
+				if (exts != null) {
+					for (String ext : exts) {
+						extMap.put(ext, cli);
+					}
+				}
+			}
+		}
+
+		cmdLine.parse(allCommandLineList, extMap);
+	}
+
+	private void hookMenu(View view, ExtensionHook hook) {
+		if (view == null) {
+			return;
+		}
+
+		ExtensionHookMenu hookMenu = hook.getHookMenu();
+		if (hookMenu == null) {
+			return;
+		}
+
+		MainMenuBar menuBar = view.getMainFrame().getMainMenuBar();
+		MenuHandler mh = new MenuHandler();
+
+		// 2 menus at the back (Tools/Help)
+		mh.addMenuHelper(menuBar, hookMenu.getNewMenus(), 2);
+
+		mh.addMenuHelper(menuBar.getMenuFile(), hookMenu.getFile(), 2);
+		mh.addMenuHelper(menuBar.getMenuTools(), hookMenu.getTools(), 2);
+		mh.addMenuHelper(menuBar.getMenuEdit(), hookMenu.getEdit());
+		mh.addMenuHelper(menuBar.getMenuView(), hookMenu.getView());
+		mh.addMenuHelper(menuBar.getMenuAnalyse(), hookMenu.getAnalyse());
+		mh.addMenuHelper(menuBar.getMenuHelp(), hookMenu.getHelpMenus());
+		mh.addMenuHelper(menuBar.getMenuReport(), hookMenu.getReportMenus());
+		mh.addMenuHelper(menuBar.getMenuOnline(), hookMenu.getOnlineMenus());
+
+		mh.addMenuHelper(view.getPopupList(), hookMenu.getPopupMenus());
+	}
+
+
+
+	private void hookOptions(ExtensionHook hook) {
+		List<AbstractParam> list = hook.getOptionsParamSetList();
+
+		for (AbstractParam paramSet : list) {
+			try {
+				model.getOptionsParam().addParamSet(paramSet);
+
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+	}
+
+	private void unloadOptions(ExtensionHook hook) {
+		List<AbstractParam> list = hook.getOptionsParamSetList();
+
+		for (AbstractParam paramSet : list) {
+			try {
+				model.getOptionsParam().removeParamSet(paramSet);
+
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+	}
+
+	private void hookView(Extension extension, View view, ExtensionHook hook) {
+		if (view == null) {
+			return;
+		}
+
+		ExtensionHookView pv = hook.getHookView();
+		if (pv == null) {
+			return;
+		}
+
+		for (ContextPanelFactory contextPanelFactory : pv.getContextPanelFactories()) {
+			try {
+				view.addContextPanelFactory(contextPanelFactory);
+			} catch (Exception e) {
+				logger.error("Error while adding a ContextPanelFactory from " + extension.getClass().getCanonicalName(), e);
+			}
+		}
+
+		view.getWorkbench().addPanels(pv.getSelectPanel(), WorkbenchPanel.PanelType.SELECT);
+		view.getWorkbench().addPanels(pv.getWorkPanel(), WorkbenchPanel.PanelType.WORK);
+		view.getWorkbench().addPanels(pv.getStatusPanel(), WorkbenchPanel.PanelType.STATUS);
+
+		addParamPanel(pv.getSessionPanel(), view.getSessionDialog());
+		addParamPanel(pv.getOptionsPanel(), view.getOptionsDialog(""));
+	}
+
+	private void removeView(Extension extension, View view, ExtensionHook hook) {
+		if (view == null) {
+			return;
+		}
+
+		ExtensionHookView pv = hook.getHookView();
+		if (pv == null) {
+			return;
+		}
+
+		for (ContextPanelFactory contextPanelFactory : pv.getContextPanelFactories()) {
+			try {
+				view.removeContextPanelFactory(contextPanelFactory);
+			} catch (Exception e) {
+				logger.error("Error while removing a ContextPanelFactory from " + extension.getClass().getCanonicalName(), e);
+			}
+		}
+
+		view.getWorkbench().removePanels(pv.getSelectPanel(), WorkbenchPanel.PanelType.SELECT);
+		view.getWorkbench().removePanels(pv.getWorkPanel(), WorkbenchPanel.PanelType.WORK);
+		view.getWorkbench().removePanels(pv.getStatusPanel(), WorkbenchPanel.PanelType.STATUS);
+
+		removeParamPanel(pv.getSessionPanel(), view.getSessionDialog());
+		removeParamPanel(pv.getOptionsPanel(), view.getOptionsDialog(""));
+	}
+
+	public void removeStatusPanel(AbstractPanel panel) {
+		if (!View.isInitialised()) {
+			return;
+		}
+
+		View.getSingleton().getWorkbench().removePanel(panel, WorkbenchPanel.PanelType.STATUS);
+	}
+
+	public void removeOptionsPanel(AbstractParamPanel panel) {
+		if (!View.isInitialised()) {
+			return;
+		}
+
+		View.getSingleton().getOptionsDialog("").removeParamPanel(panel);
+	}
+
+	public void removeOptionsParamSet(AbstractParam params) {
+		model.getOptionsParam().removeParamSet(params);
+	}
+
+	public void removeWorkPanel(AbstractPanel panel) {
+		if (!View.isInitialised()) {
+			return;
+		}
+
+		View.getSingleton().getWorkbench().removePanel(panel, WorkbenchPanel.PanelType.WORK);
+	}
+
+	/**
+	 * Init all extensions
+	 */
+	private void initAllExtension(double progressFactor) {
+		initExtension(i -> {
 			try {
 				getExtension(i).init();
 				getExtension(i).databaseOpen(Model.getSingleton().getDb());
@@ -820,171 +764,171 @@ public class ExtensionLoader {
 				e.printStackTrace();
 			}
 		},  progressFactor);
-    }
+	}
 
-    /**
-     * Init all extensions with the same Model
-     * @param model the model to apply to all extensions
-     */
-    private void initModelAllExtension(Model model, double progressFactor) {
- 
-    	initExtension(i -> getExtension(i).initModel(model), progressFactor);
-    }
+	/**
+	 * Init all extensions with the same Model
+	 * @param model the model to apply to all extensions
+	 */
+	private void initModelAllExtension(Model model, double progressFactor) {
 
-    /**
-     * Init all extensions with the same View
-     * @param view the View that need to be applied
-     */
-    private void initViewAllExtension(final View view, double progressFactor) {
-        if (view == null) {
-            return;
-        }
+		initExtension(i -> getExtension(i).initModel(model), progressFactor);
+	}
 
-        final double factorPerc = progressFactor / getExtensionCount();
-        
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-                final Extension extension = getExtension(i);
-                EventQueue.invokeAndWait(new Runnable() {
+	/**
+	 * Init all extensions with the same View
+	 * @param view the View that need to be applied
+	 */
+	private void initViewAllExtension(final View view, double progressFactor) {
+		if (view == null) {
+			return;
+		}
 
-                    @Override
-                    public void run() {
-                        extension.initView(view);
-                        view.addSplashScreenLoadingCompletion(factorPerc);
-                    }
-                });
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
+		final double factorPerc = progressFactor / getExtensionCount();
 
-    private void initXMLAllExtension(Session session, OptionsParam options, double progressFactor) {
-        initExtension(i -> getExtension(i).initXML(session, options), progressFactor);
-    }
-    
-    private void initExtension(Consumer<Integer> actionToExecute, double progressFactor) {
-        double factorPerc = progressFactor / getExtensionCount();
-        
-        for (int i = 0; i < getExtensionCount(); i++) {
-            try {
-            	actionToExecute.accept(i);
-                if (view != null) {
-                    view.addSplashScreenLoadingCompletion(factorPerc);
-                }
-                
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				final Extension extension = getExtension(i);
+				EventQueue.invokeAndWait(new Runnable() {
 
-    /**
-     * Removes an extension from internal list. As a result listeners added via
-     * the {@link ExtensionHook} object are unregistered.
-     *
-     * @param extension
-     * @param hook
-     */
-    public void removeExtension(Extension extension, ExtensionHook hook) {
-        extensionList.remove(extension);
-        extensionsMap.remove(extension.getClass());
+					@Override
+					public void run() {
+						extension.initView(view);
+						view.addSplashScreenLoadingCompletion(factorPerc);
+					}
+				});
 
-        if (hook == null) {
-            logger.info("ExtensionHook is null for \"" + extension.getClass().getCanonicalName()
-                    + "\" the hooked objects will not be automatically removed.");
-            return;
-        }
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+	}
 
-        // by removing the ExtensionHook object,
-        // the following listeners are no longer informed:
-        // 		* SessionListeners
-        // 		* OptionsChangedListeners
-        extensionHooks.values().remove(hook);
+	private void initXMLAllExtension(Session session, OptionsParam options, double progressFactor) {
+		initExtension(i -> getExtension(i).initXML(session, options), progressFactor);
+	}
 
-        unloadOptions(hook);
+	private void initExtension(Consumer<Integer> actionToExecute, double progressFactor) {
+		double factorPerc = progressFactor / getExtensionCount();
 
-        hookProxyLinkerManager.removeAllListeners(hook);
+		for (int i = 0; i < getExtensionCount(); i++) {
+			try {
+				actionToExecute.accept(i);
+				if (view != null) {
+					view.addSplashScreenLoadingCompletion(factorPerc);
+				}
 
-        for (ContextDataFactory contextDataFactory : hook.getContextDataFactories()) {
-            try {
-                model.removeContextDataFactory(contextDataFactory);
-            } catch (Exception e) {
-                logger.error("Error while removing a ContextDataFactory from " + extension.getClass().getCanonicalName(), e);
-            }
-        }
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
+	}
 
-        for (ApiImplementor apiImplementor : hook.getApiImplementors()) {
-            try {
-                API.getInstance().removeApiImplementor(apiImplementor);
-            } catch (Exception e) {
-                logger.error("Error while removing an ApiImplementor from " + extension.getClass().getCanonicalName(), e);
-            }
-        }
+	/**
+	 * Removes an extension from internal list. As a result listeners added via
+	 * the {@link ExtensionHook} object are unregistered.
+	 *
+	 * @param extension
+	 * @param hook
+	 */
+	public void removeExtension(Extension extension, ExtensionHook hook) {
+		extensionList.remove(extension);
+		extensionsMap.remove(extension.getClass());
 
-        removeViewInEDT(extension, hook);
-    }
+		if (hook == null) {
+			logger.info("ExtensionHook is null for \"" + extension.getClass().getCanonicalName()
+					+ "\" the hooked objects will not be automatically removed.");
+			return;
+		}
 
-    private void removeViewInEDT(final Extension extension, final ExtensionHook hook) {
-        if (view == null) {
-            return;
-        }
+		// by removing the ExtensionHook object,
+		// the following listeners are no longer informed:
+		// 		* SessionListeners
+		// 		* OptionsChangedListeners
+		extensionHooks.values().remove(hook);
 
-        if (EventQueue.isDispatchThread()) {
-            removeView(extension, view, hook);
-            MenuHandler mh = new MenuHandler();
-            mh.removeMenu(view, hook.getHookMenu());
-        } else {
-            EventQueue.invokeLater(new Runnable() {
+		unloadOptions(hook);
 
-                @Override
-                public void run() {
-                    removeViewInEDT(extension, hook);
-                }
-            });
-        }
-    }
+		hookProxyLinkerManager.removeAllListeners(hook);
 
-    /**
-     * Gets the names of all unsaved resources of all the extensions.
-     *
-     * @return a {@code List} containing all the unsaved resources of all add-ons, never {@code null}
-     * @see Extension#getActiveActions()
-     */
-    public List<String> getUnsavedResources() {
-        List<String> list = new ArrayList<>();
-        List<String> l;
+		for (ContextDataFactory contextDataFactory : hook.getContextDataFactories()) {
+			try {
+				model.removeContextDataFactory(contextDataFactory);
+			} catch (Exception e) {
+				logger.error("Error while removing a ContextDataFactory from " + extension.getClass().getCanonicalName(), e);
+			}
+		}
 
-        for (int i = 0; i < getExtensionCount(); i++) {
-            l = getExtension(i).getUnsavedResources();
-            if (l != null) {
-                list.addAll(l);
-            }
-        }
-        
-        return list;
-    }
+		for (ApiImplementor apiImplementor : hook.getApiImplementors()) {
+			try {
+				API.getInstance().removeApiImplementor(apiImplementor);
+			} catch (Exception e) {
+				logger.error("Error while removing an ApiImplementor from " + extension.getClass().getCanonicalName(), e);
+			}
+		}
 
-    /**
-     * Gets the names of all active actions of all the extensions.
-     *
-     * @return a {@code List} containing all the active actions of all add-ons, never {@code null}
-     * @since 2.4.0
-     * @see Extension#getActiveActions()
-     */
-    public List<String> getActiveActions() {
-        List<String> list = new ArrayList<>();
-        List<String> l;
+		removeViewInEDT(extension, hook);
+	}
 
-        for (int i = 0; i < getExtensionCount(); i++) {
-            l = getExtension(i).getActiveActions();
-            if (l != null) {
-                list.addAll(l);
-            }
-        }
-        
-        return list;
-    }
+	private void removeViewInEDT(final Extension extension, final ExtensionHook hook) {
+		if (view == null) {
+			return;
+		}
+
+		if (EventQueue.isDispatchThread()) {
+			removeView(extension, view, hook);
+			MenuHandler mh = new MenuHandler();
+			mh.removeMenu(view, hook.getHookMenu());
+		} else {
+			EventQueue.invokeLater(new Runnable() {
+
+				@Override
+				public void run() {
+					removeViewInEDT(extension, hook);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Gets the names of all unsaved resources of all the extensions.
+	 *
+	 * @return a {@code List} containing all the unsaved resources of all add-ons, never {@code null}
+	 * @see Extension#getActiveActions()
+	 */
+	public List<String> getUnsavedResources() {
+		List<String> list = new ArrayList<>();
+		List<String> l;
+
+		for (int i = 0; i < getExtensionCount(); i++) {
+			l = getExtension(i).getUnsavedResources();
+			if (l != null) {
+				list.addAll(l);
+			}
+		}
+
+		return list;
+	}
+
+	/**
+	 * Gets the names of all active actions of all the extensions.
+	 *
+	 * @return a {@code List} containing all the active actions of all add-ons, never {@code null}
+	 * @since 2.4.0
+	 * @see Extension#getActiveActions()
+	 */
+	public List<String> getActiveActions() {
+		List<String> list = new ArrayList<>();
+		List<String> l;
+
+		for (int i = 0; i < getExtensionCount(); i++) {
+			l = getExtension(i).getActiveActions();
+			if (l != null) {
+				list.addAll(l);
+			}
+		}
+
+		return list;
+	}
 
 }
