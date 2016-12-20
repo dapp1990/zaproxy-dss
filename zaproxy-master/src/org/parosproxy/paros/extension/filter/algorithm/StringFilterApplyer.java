@@ -25,11 +25,11 @@ FilterApplyer<String> {
 		String content = pageContent.getContent();
 		FormatFileToFilterInfo filterInfoParser = new FormatFileToFilterInfo(formatFileUrl);
 		Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile = filterInfoParser.getFilterParameters();
-		return applyBasicStringFilter(content, parsedFormatFile);
+		return applyBasicFilter(content, parsedFormatFile);
 	}
 
 	@Override
-	public String applyBasicStringFilter(String content, Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile) {
+	public String applyBasicFilter(String content, Pair<Integer, ArrayList<InappropriateElement<String>>> parsedFormatFile) {
 
 		String resultDescription = "";
 		int totalWeight = 0;
