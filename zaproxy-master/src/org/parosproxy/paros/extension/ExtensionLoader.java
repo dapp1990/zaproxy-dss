@@ -768,4 +768,12 @@ public class ExtensionLoader {
 	public void destroyAllExtensions() {
 		extensionList.destroyAllExtensions();
 	}
+
+	public List<String> getUnsavedResources() {
+		return extensionList.getUnsavedResources();
+	}
+
+	public List<String> getActiveActions() {
+		return extensionList.getActiveActions();
+	}
 }

@@ -1,17 +1,10 @@
 package org.parosproxy.paros.extension.filter;
 
-import java.util.ArrayList;
-
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.extension.filter.algorithm.StringFilterApplyer;
-import org.parosproxy.paros.extension.filter.content.PageStringContent;
-import org.parosproxy.paros.extension.filter.formatter.FormatFileToFilterInfo;
-import org.parosproxy.paros.extension.filter.formatter.InappropriateElement;
 import org.parosproxy.paros.network.HttpMessage;
 import org.parosproxy.paros.network.HttpResponseHeader;
 import org.zaproxy.zap.network.HttpResponseBody;
-
-import javafx.util.Pair;
 
 public class FilterHttpContent extends FilterAdaptor {
 

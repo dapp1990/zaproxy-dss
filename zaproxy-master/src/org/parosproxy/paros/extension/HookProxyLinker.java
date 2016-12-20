@@ -9,16 +9,14 @@ import org.parosproxy.paros.control.Proxy;
 
 public class HookProxyLinker {
 	
-	private static final Logger logger = Logger.getLogger(HookProxyLinker.class);		//Slight change functionality
+	private static final Logger logger = Logger.getLogger(HookProxyLinker.class);
 	
-	private Class<?> clazz;
 	private Method getMethod;
 	private Method addMethod;
 	private Method removeMethod;
 	private Object proxy;
 
 	protected HookProxyLinker(Class<?> clazz, String methodRoot, Object proxy) {
-		this.clazz = clazz;
 		this.proxy = proxy;
 		try {
 			this.getMethod = ExtensionHook.class.getMethod("get"+methodRoot+"Listeners");
