@@ -365,9 +365,9 @@ public class ExtensionLoader {
 		// Step 3: initialize all (slow)
 		initAllExtension(5.0);
 		// Step 4: initialize models (quick)
-		initModelAllExtension(model, 0.0);
+		initModelAllExtension(0.0);
 		// Step 5: initialize xmls (quick)
-		initXMLAllExtension(model.getSession(), model.getOptionsParam(), 0.0);
+		initXMLAllExtension(0.0);
 		// Step 6: initialize viewes (slow)
 		initViewAllExtension(view, 10.0);
 		// Step 7: initialize hooks (slowest)
@@ -733,7 +733,7 @@ public class ExtensionLoader {
 	 * Init all extensions with the same Model
 	 * @param model the model to apply to all extensions
 	 */
-	private void initModelAllExtension(Model model, double progressFactor) {
+	private void initModelAllExtension(double progressFactor) {
 		initExtension(ext -> ext.initModel(model), progressFactor);
 	}
 
@@ -764,8 +764,8 @@ public class ExtensionLoader {
 		}
 	}
 
-	private void initXMLAllExtension(Session session, OptionsParam options, double progressFactor) {
-		initExtension(ext -> ext.initXML(session, options), progressFactor);
+	private void initXMLAllExtension(double progressFactor) {
+		initExtension(ext -> ext.initXML(model.getSession(), model.getOptionsParam()), progressFactor);
 	}
 
 	private void initExtension(Consumer<Extension> extensionAction, double progressFactor) {
