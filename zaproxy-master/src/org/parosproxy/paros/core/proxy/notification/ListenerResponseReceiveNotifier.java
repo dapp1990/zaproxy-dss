@@ -11,7 +11,7 @@ import org.parosproxy.paros.network.HttpMessage;
  * The msg can be changed by each observers.
  */
 
-public class NotificationListenerResponseReceive extends ProxyListenerNotifier {
+public class ListenerResponseReceiveNotifier extends ProxyListenerNotifier {
 	
 	private boolean returnStatement = true;
 	

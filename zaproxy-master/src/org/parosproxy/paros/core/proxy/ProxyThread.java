@@ -85,13 +85,13 @@ import java.util.zip.InflaterInputStream;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
-import org.parosproxy.paros.core.proxy.notification.NotificationConnectMessage;
+import org.parosproxy.paros.core.proxy.notification.ConnectMessageNotifier;
 import org.parosproxy.paros.core.proxy.notification.ProxyListenerNotifier;
-import org.parosproxy.paros.core.proxy.notification.NotificationListenerRequestSend;
-import org.parosproxy.paros.core.proxy.notification.NotificationListenerResponseReceive;
-import org.parosproxy.paros.core.proxy.notification.NotificationOverrideListenersRequestSend;
-import org.parosproxy.paros.core.proxy.notification.NotificationOverrideListenersResponseReceived;
-import org.parosproxy.paros.core.proxy.notification.NotificationPersistentConnectionListener;
+import org.parosproxy.paros.core.proxy.notification.ListenerRequestSendNotifier;
+import org.parosproxy.paros.core.proxy.notification.ListenerResponseReceiveNotifier;
+import org.parosproxy.paros.core.proxy.notification.OverrideListenersRequestSendNotifier;
+import org.parosproxy.paros.core.proxy.notification.OverrideListenersResponseReceivedNotifier;
+import org.parosproxy.paros.core.proxy.notification.PersistentConnectionListenerNotifier;
 import org.parosproxy.paros.db.RecordHistory;
 import org.parosproxy.paros.model.Model;
 import org.parosproxy.paros.network.ConnectionParam;
@@ -152,12 +152,12 @@ class ProxyThread implements Runnable {
 		proxyParam = parentServer.getProxyParam();
 		connectionParam = parentServer.getConnectionParam();
 		
-		notificationHttp.put("ListenerRequestSend", new NotificationListenerRequestSend());
-		notificationHttp.put("ListenerResponseReceive", new NotificationListenerResponseReceive());
-		notificationHttp.put("OverrideListenersRequestSend", new NotificationOverrideListenersRequestSend());
-		notificationHttp.put("OverrideListenersResponseReceived", new NotificationOverrideListenersResponseReceived());
-		notificationHttp.put("ConnectMessage", new NotificationConnectMessage());
-		notificationHttp.put("PersistentConnectionListener", new NotificationPersistentConnectionListener());
+		notificationHttp.put("ListenerRequestSend", new ListenerRequestSendNotifier());
+		notificationHttp.put("ListenerResponseReceive", new ListenerResponseReceiveNotifier());
+		notificationHttp.put("OverrideListenersRequestSend", new OverrideListenersRequestSendNotifier());
+		notificationHttp.put("OverrideListenersResponseReceived", new OverrideListenersResponseReceivedNotifier());
+		notificationHttp.put("ConnectMessage", new ConnectMessageNotifier());
+		notificationHttp.put("PersistentConnectionListener", new PersistentConnectionListenerNotifier());
 		
 		inSocket = socket;
     	try {
@@ -411,7 +411,7 @@ class ProxyThread implements Runnable {
 			
 			ZapGetMethod method = (ZapGetMethod) msg.getUserObject();		
 			
-			keepSocketOpen = ((NotificationPersistentConnectionListener) notificationHttp.get("PersistentConnectionListener")).notify(this.parentServer, msg, inSocket, method);
+			keepSocketOpen = ((PersistentConnectionListenerNotifier) notificationHttp.get("PersistentConnectionListener")).notify(this.parentServer, msg, inSocket, method);
 			
 			if (keepSocketOpen) {
 				// do not wait for close

@@ -12,7 +12,7 @@ import org.parosproxy.paros.network.HttpMessage;
  * 
  */
 
-public class NotificationConnectMessage extends ProxyListenerNotifier {
+public class ConnectMessageNotifier extends ProxyListenerNotifier {
 	
 	@Override
 	protected boolean doTryStatement(Object object, HttpMessage httpMessage) {

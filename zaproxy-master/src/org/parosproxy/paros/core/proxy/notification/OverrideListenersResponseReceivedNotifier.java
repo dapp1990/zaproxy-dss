@@ -6,19 +6,19 @@ import org.parosproxy.paros.core.proxy.OverrideMessageProxyListener;
 import org.parosproxy.paros.core.proxy.ProxyServer;
 import org.parosproxy.paros.network.HttpMessage;
 
-public class NotificationOverrideListenersRequestSend extends ProxyListenerNotifier {
-
+public class OverrideListenersResponseReceivedNotifier extends ProxyListenerNotifier {
+	
 	private boolean returnStatement = false;
 	
 	@Override
 	protected boolean doTryStatement(Object object, HttpMessage httpMessage) {
 		OverrideMessageProxyListener overrideMessageProxyListener = (OverrideMessageProxyListener) object;
-		 if (overrideMessageProxyListener.onHttpRequestSend(httpMessage)) {
+		 if (overrideMessageProxyListener.onHttpResponseReceived(httpMessage)) {
 			 returnStatement =  true;
 		 }
 		 return returnStatement;
 	}
-
+	
 	@Override
 	protected List<OverrideMessageProxyListener> getListener(ProxyServer proxyServer) {
 		return proxyServer.getOverrideMessageProxyListeners();
