@@ -7,5 +7,5 @@ import org.parosproxy.paros.extension.filter.formatter.InappropriateElement;
 import javafx.util.Pair;
 
 public abstract class FilterApplyer<T> {
-	public abstract T applyBasicStringFilter (T contentInput, Pair<Integer, ArrayList<InappropriateElement<T>>> filterTagInput); 
+	public abstract T applyBasicFilter (T contentInput, Pair<Integer, ArrayList<InappropriateElement<T>>> filterTagInput); 
 }
