@@ -275,22 +275,22 @@ public class ExtensionLoader {
 
 	public void sessionAboutToChangeAllPlugin(Session session) {
 		logger.debug("sessionAboutToChangeAllPlugin");
-		notifyEvent(listener -> listener.sessionAboutToChange(session));
+		notifySessionEvent(listener -> listener.sessionAboutToChange(session));
 	}
 
 	public void sessionChangedAllPlugin(Session session) {
 		logger.debug("sessionChangedAllPlugin");
-		notifyEvent(listener -> listener.sessionChanged(session));
+		notifySessionEvent(listener -> listener.sessionChanged(session));
 	}
 
 	public void sessionScopeChangedAllPlugin(Session session) {
 		logger.debug("sessionScopeChangedAllPlugin");
-		notifyEvent(listener -> listener.sessionScopeChanged(session));
+		notifySessionEvent(listener -> listener.sessionScopeChanged(session));
 	}
 
 	public void sessionModeChangedAllPlugin(Mode mode) {
 		logger.debug("sessionModeChangedAllPlugin");
-		notifyEvent(listener -> listener.sessionModeChanged(mode));
+		notifySessionEvent(listener -> listener.sessionModeChanged(mode));
 	}
 
 	public void addonFilesAdded() {
@@ -334,22 +334,10 @@ public class ExtensionLoader {
 	}
 
 	public void optionsChangedAllPlugin(OptionsParam options) {
-		for (ExtensionHook hook : extensionHooks.values()) {
-			List<OptionsChangedListener> listenerList = hook.getOptionsChangedListenerList();
-			for (OptionsChangedListener listener : listenerList) {
-				try {
-					if (listener != null) {
-						listener.optionsChanged(options);
-					}
-
-				} catch (Exception e) {
-					logger.error(e.getMessage(), e);
-				}
-			}
-		}
+		notifyEvent(listener -> listener.optionsChanged(options), hook -> hook.getOptionsChangedListenerList());
 	}
 
-	private void notifyEvent(Consumer<SessionChangedListener> executer) {
+	private void notifySessionEvent(Consumer<SessionChangedListener> executer) {
 		notifyEvent(executer, hook -> hook.getSessionListenerList());
 	}
 
@@ -366,23 +354,14 @@ public class ExtensionLoader {
 						executer.accept(listener);
 					}
 				} catch (Exception e) {
-					logger.error(e.getMessage(), e);
+					logger.error("An error occurred while notifying: " + listener.getClass().getCanonicalName(), e);
 				}
 			}
 		}
 	}
 
 	private void notifyInstallEvent(Consumer<AddOnInstallationStatusListener> executer) {
-		for (ExtensionHook hook : extensionHooks.values()) {
-			List<AddOnInstallationStatusListener> listenerList = hook.getAddOnInstallationStatusListeners();
-			for (AddOnInstallationStatusListener listener : listenerList) {
-				try {
-					executer.accept(listener);
-				} catch (Exception e) {
-					logger.error("An error occurred while notifying: " + listener.getClass().getCanonicalName(), e);
-				}
-			}
-		}
+		notifyEvent(executer, hook -> hook.getAddOnInstallationStatusListeners());
 	}
 
 	public void startAllExtension(double progressFactor) {
