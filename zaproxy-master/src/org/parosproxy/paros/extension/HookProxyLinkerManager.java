@@ -17,7 +17,6 @@ public class HookProxyLinkerManager {
 		overrideMessageProxyLinker = new OverrideMessageProxyLinker(proxy);
 		connectRequestProxyLinker = new ConnectRequestProxyLinker(proxy);
 		proxyLinker = new ProxyLinker(proxy);
-		//siteMapLinker = new SiteMapLinker(siteMapPanel);
 		
 	}
 

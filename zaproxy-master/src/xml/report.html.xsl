@@ -56,24 +56,6 @@
   </tr>
 </table>
 <p></p>
-  <!--
-  <table border="1">
-    <tr bgcolor="#9acd32">
-      <th style="text-align:left">Minimum</th>
-      <th style="text-align:left">Maximum</th>
-      <th style="text-align:left">Median</th>
-      <th style="text-align:left">Average</th>
-    </tr>
-    <xsl:for-each select="imagestatistics/fileTypes">
-    <tr>
-      <td><xsl:value-of select="min"/></td>
-      <td><xsl:value-of select="max"/></td>
-      <td><xsl:value-of select="med"/></td>
-      <td><xsl:value-of select="avg"/></td>
-    </tr>
-    </xsl:for-each>
-  </table>
--->
 
 <xsl:apply-templates select="descendant::imagestatistics">
   
@@ -336,20 +318,6 @@
 </font></strong></td>
   </tr>
   </xsl:template>
-
-
-<!--
-  <xsl:template match="riskdesc">
-  <tr valign="top"> 
-    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif">Risk</font></td>
-    <td width="20%"><font size="2" face="Arial, Helvetica, sans-serif">
-    <p>
-    <xsl:apply-templates select="text()|*"/>
-    </p>
-    </font></td>
-  </tr>
-  </xsl:template>
--->
 
   <xsl:template match="desc">
   <tr bgcolor="#e8e8e8" valign="top"> 

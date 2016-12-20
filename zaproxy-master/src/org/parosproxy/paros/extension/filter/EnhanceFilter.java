@@ -13,7 +13,7 @@ public class EnhanceFilter extends SimpleImageFilter {
 		ByteArrayOutputStream tmp = new ByteArrayOutputStream();
 		BufferedImage outputImage;
 		try {
-			ImageIO.write(inputImage, "png", tmp);	//probably inaccurate with hardcoded extension
+			ImageIO.write(inputImage, "png", tmp);
 			tmp.close();
 			Integer contentLength = tmp.size();
 

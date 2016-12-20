@@ -122,10 +122,6 @@ public class Control extends AbstractControl implements SessionListener {
 		// ZAP: Start proxy even if no view
 	    Proxy proxy = getProxy(overrides);
 	    HookProxyLinkerManager hookProxyLinkerManager = new HookProxyLinkerManager(Control.getSingleton().getProxy());
-//	    getExtensionLoader().hookProxyListener(proxy);
-//	    getExtensionLoader().hookOverrideMessageProxyListener(proxy);
-//	    getExtensionLoader().hookPersistentConnectionListener(proxy);
-//	    getExtensionLoader().hookConnectRequestProxyListeners(proxy);
 	   
 	   hookProxyLinkerManager.hookProxyListener();
 	   hookProxyLinkerManager.hookConnectRequestProxyListener();

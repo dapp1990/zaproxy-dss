@@ -1,11 +1,3 @@
-// TODO the result of getClassification should contain the words that are common in the set,
-// this is the explanation taken form the assignment:
-// "Now take a page from a forum of Trump supporters, which contains the strings ’Trump’, 
-// ’Nigger’, ’deport Mexicans’. Based on our common-sense content filter, this page scores a 
-// 24, which is well above our threshold of 10. This content is considered inappropriate, and 
-// the placeholder will tell the user it’s because of racist and fearmongering content."
-
-
 package org.parosproxy.paros.extension.filter.algorithm;
 
 import java.util.ArrayList;

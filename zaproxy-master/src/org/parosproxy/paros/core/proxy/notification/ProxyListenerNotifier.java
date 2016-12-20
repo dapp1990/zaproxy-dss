@@ -1,4 +1,3 @@
-
 package org.parosproxy.paros.core.proxy.notification;
 
 import java.util.List;
@@ -22,7 +21,6 @@ public abstract class ProxyListenerNotifier {
 		
 		for (int i=0; i<listenerList.size(); i++) {
 			try {
-				//if(doTryStatement(listenerList.get(i), httpMessage, inSocket, method))
 				if(function.apply(listenerList.get(i)))
 					break;
 			} catch (Exception e) {

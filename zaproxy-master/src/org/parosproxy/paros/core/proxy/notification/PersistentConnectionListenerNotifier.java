@@ -18,20 +18,11 @@ public class PersistentConnectionListenerNotifier extends ProxyListenerNotifier 
 
 	protected boolean keepSocketOpen = false;
 	
-	/*
-	@Override
-	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage){
-		return false;
-		
-	}
-	*/
-	
 	public boolean notify(ProxyServer proxyServer, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
 
 		return (applyNotificationFunction(proxyServer, pxs -> doTryStatement(pxs, httpMessage, inSocket, method)));
 
 	}
-	
 	
 	private boolean doTryStatement(Object object, HttpMessage httpMessage, Socket inSocket, ZapGetMethod method) {
 		PersistentConnectionListener persistentConnectionListener = (PersistentConnectionListener) object;

@@ -22,7 +22,6 @@ public class FilterReplaceImage extends FilterAdaptor {
 
 	@Override
 	public String getName() {
-		// TODO We should use the Constant.messages.getString() method to be coherent with zaproxy
 		return "Filter Image";
 	}
 
@@ -32,47 +31,6 @@ public class FilterReplaceImage extends FilterAdaptor {
 		// TODO Auto-generated method stub
 
 	}
-
-//	@Override
-//	public void onHttpResponseReceive(HttpMessage httpMessage) {
-//		if (httpMessage.getResponseHeader().getHeader("Content-Type").startsWith("image/")){
-//			String extension = httpMessage.getResponseHeader().getHeader("Content-Type").substring(httpMessage.getResponseHeader().getHeader("Content-Type").lastIndexOf("/") + 1);
-//
-//			try {
-//				//convert byte[] to BufferedImage
-//				byte imageReference[] = httpMessage.getResponseBody().getBytes().clone();
-//				ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
-//				BufferedImage imageInBuffer = ImageIO.read(imageValue);
-//
-//				FileReader fr = new FileReader("resources/config.txt");
-//				BufferedReader textReader = new BufferedReader(fr);
-//
-//				while(textReader.ready()){
-//					SimpleImageFilter filter;
-//					switch (textReader.readLine()){
-//					case "watermark": filter = new WatermarkFilter();break;//ImageProcessor.applyWatermark(imageInBuffer); break;
-//					case "enhance": filter = new EnhanceFilter();; break;
-//					case "flip": filter = new FlippingFilter();; break;
-//					default: throw new IllegalArgumentException();
-//					}
-//					imageInBuffer = filter.applyFilter(imageInBuffer);
-//				}
-//				textReader.close();
-//
-//				//convert BufferedImage to byte[]
-//				ByteArrayOutputStream ouput = new ByteArrayOutputStream();
-//				ImageIO.write(imageInBuffer, extension, ouput );
-//				ouput.flush();
-//				byte[] imageInByte = ouput.toByteArray();
-//				ouput.close();
-//
-//				//set the filtered image to the body
-//				httpMessage.setResponseBody(imageInByte);
-//			} catch (IOException ioe){
-//
-//			}
-//
-//		}
 	
 	@Override
 	public void onHttpResponseReceive(HttpMessage httpMessage) {
@@ -84,21 +42,6 @@ public class FilterReplaceImage extends FilterAdaptor {
 				byte imageReference[] = httpMessage.getResponseBody().getBytes().clone();
 				ByteArrayInputStream imageValue = new ByteArrayInputStream(imageReference);
 				BufferedImage imageInBuffer = ImageIO.read(imageValue);
-
-//				FileReader fr = new FileReader("resources/config.txt");
-//				BufferedReader textReader = new BufferedReader(fr);
-//
-//				while(textReader.ready()){
-//					SimpleImageFilter filter;
-//					switch (textReader.readLine()){
-//					case "watermark": filter = new WatermarkFilter();break;//ImageProcessor.applyWatermark(imageInBuffer); break;
-//					case "enhance": filter = new EnhanceFilter();; break;
-//					case "flip": filter = new FlippingFilter();; break;
-//					default: throw new IllegalArgumentException();
-//					}
-//					imageInBuffer = filter.applyFilter(imageInBuffer);
-//				}
-//				textReader.close();
 				
 				ConfigurationReader<SimpleImageFilter> cr = new ConfigurationReader<SimpleImageFilter>("resources/config.txt", "org.parosproxy.paros.extension.filter");
 				ArrayList<SimpleImageFilter> filters = cr.getInstances();

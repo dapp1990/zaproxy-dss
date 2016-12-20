@@ -42,7 +42,6 @@ public class HookProxyLinker {
 		for (Object listener : listeners) {
 			try {
 				if (listener != null) {
-					//proxy.addPersistentConnectionListener(listener);
 					this.addMethod.invoke(proxy, listener);
 				}
 			} catch (Exception e) {

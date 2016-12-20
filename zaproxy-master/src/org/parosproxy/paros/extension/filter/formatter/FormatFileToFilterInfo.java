@@ -1,7 +1,3 @@
-// TODO The solution should include a well-designed parser for this format.
-// TODO The parser should ignore malformed lines.
-// TODO The parser should ignore blank lines.
-
 package org.parosproxy.paros.extension.filter.formatter;
 
 import java.io.BufferedReader;
@@ -12,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import javafx.util.Pair;
 
-public class FormatFileToFilterInfo { //extends FormatterAbstractReplace<String, ArrayList<Triplet<String,String,String>> > {
+public class FormatFileToFilterInfo { 
 
 	private final String url;
 

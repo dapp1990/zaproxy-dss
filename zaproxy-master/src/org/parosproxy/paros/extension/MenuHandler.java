@@ -105,9 +105,5 @@ public class MenuHandler {
 			}
 		}
 	}
-	//    
-	//    public void removePopupMenuItem(ExtensionPopupMenuItem popupMenuItem, JMenuBar menu) {
-	//        View.getSingleton().getPopupList().remove(popupMenuItem);
-	//    }
 
 }

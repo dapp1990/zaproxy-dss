@@ -48,7 +48,7 @@ public abstract class ImageDimensionStatistics extends ImageStatistics {
 	private double getAvgImageDimension(List<HttpImage> siteImages) {
 		int counter = 0;
 		for(HttpImage img: siteImages){
-			counter += getImageDimension(img); //getImageSize();
+			counter += getImageDimension(img);
 		}
 		return counter/siteImages.size();
 	}
