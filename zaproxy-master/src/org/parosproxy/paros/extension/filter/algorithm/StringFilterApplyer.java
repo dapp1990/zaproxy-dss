@@ -18,7 +18,7 @@ import org.parosproxy.paros.network.HttpMessage;
 import javafx.util.Pair;
 
 public class StringFilterApplyer extends
-ClassifierAbstract<String> {
+FilterApplyer<String> {
 	
 	public String executeFiltering(HttpMessage httpMessage, String formatFileUrl) {
 		PageStringContent pageContent = new PageStringContent(httpMessage);
