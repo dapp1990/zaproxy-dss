@@ -74,7 +74,7 @@ public abstract class AbstractControl {
     
     public void shutdown(boolean compact) {
 	    getExtensionLoader().stopAllExtension();
-	    getExtensionLoader().destroyAllExtensions();
+	    getExtensionLoader().destroyAllExtension();
 		model.getDb().close(compact);
 		
     }

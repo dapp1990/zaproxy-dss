@@ -765,7 +765,7 @@ public class ExtensionLoader {
 		return extensionList.getExtension(clazz);
 	}
 
-	public void destroyAllExtensions() {
+	public void destroyAllExtension() {
 		extensionList.destroyAllExtensions();
 	}
 
