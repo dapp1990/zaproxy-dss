@@ -83,7 +83,6 @@ import org.parosproxy.paros.common.AbstractParam;
 import org.parosproxy.paros.control.Control;
 import org.parosproxy.paros.control.Control.Mode;
 import org.parosproxy.paros.control.Proxy;
-import org.parosproxy.paros.core.proxy.ProxyListener;
 import org.parosproxy.paros.core.scanner.Scanner;
 import org.parosproxy.paros.core.scanner.ScannerHook;
 import org.parosproxy.paros.db.Database;
@@ -149,27 +148,24 @@ public class ExtensionLoader {
 
 	public Extension getExtension(String name) {
 		if (name != null) {
-			for (int i = 0; i < extensionList.size(); i++) {
-				Extension p = getExtension(i);
-				if (p.getName().equalsIgnoreCase(name)) {
-					return p;
-				}
-			}
+			return findExtension(ext -> ext.getName().equalsIgnoreCase(name));
 		}
-
 		return null;
 	}
 
 	public Extension getExtensionByClassName(String name) {
 		if (name != null) {
-			for (int i = 0; i < extensionList.size(); i++) {
-				Extension p = getExtension(i);
-				if (p.getClass().getName().equals(name)) {
-					return p;
+			return findExtension(ext -> ext.getClass().getName().equals(name));
+		}
+		return null;
+	}
+	
+	private Extension findExtension(Function<Extension, Boolean> checker) {
+			for (Extension ext : extensionList) {
+				if (checker.apply(ext)) {
+					return ext;
 				}
 			}
-		}
-
 		return null;
 	}
 
@@ -239,10 +235,7 @@ public class ExtensionLoader {
 
 			for (ScannerHook scannerHook : scannerHookList) {
 				try {
-					if (hook != null) {
 						scan.addScannerHook(scannerHook);
-					}
-
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				}
@@ -251,9 +244,7 @@ public class ExtensionLoader {
 	}
 
 	public void runCommandLine() {
-		Extension ext;
-		for (int i = 0; i < getExtensionCount(); i++) {
-			ext = getExtension(i);
+		for (Extension ext : extensionList) {
 			if (ext instanceof CommandLineListener) {
 				CommandLineListener listener = (CommandLineListener) ext;
 				listener.execute(extensionHooks.get(ext).getCommandLineArgument());
@@ -262,9 +253,7 @@ public class ExtensionLoader {
 	}
 
 	public void databaseOpen(Database db) {
-		Extension ext;
-		for (int i = 0; i < getExtensionCount(); i++) {
-			ext = getExtension(i);
+		for (Extension ext : extensionList) {
 			try {
 				ext.databaseOpen(db);
 			} catch (Exception e) {
@@ -367,9 +356,9 @@ public class ExtensionLoader {
 	public void startAllExtension(double progressFactor) {
 		double factorPerc = progressFactor / getExtensionCount();
 
-		for (int i = 0; i < getExtensionCount(); i++) {
+		for (Extension ext : extensionList) {
 			try {
-				getExtension(i).start();
+				ext.start();
 				if (view != null) {
 					view.addSplashScreenLoadingCompletion(factorPerc);
 				}
@@ -441,7 +430,6 @@ public class ExtensionLoader {
 
 		ext.start();
 
-		Proxy proxy = Control.getSingleton().getProxy();
 		hookProxyLinkerManager.hookProxyListener();
 
 		//        hookPersistentConnectionListeners(proxy, extHook.getPersistentConnectionListener());
@@ -456,10 +444,9 @@ public class ExtensionLoader {
 	}
 
 	public void stopAllExtension() {
-		for (int i = 0; i < getExtensionCount(); i++) {
+		for (Extension ext : extensionList) {
 			try {
-				getExtension(i).stop();
-
+				ext.stop();
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
@@ -496,9 +483,8 @@ public class ExtensionLoader {
 	private void hookAllExtension(double progressFactor) {
 		final double factorPerc = progressFactor / getExtensionCount();
 
-		for (int i = 0; i < getExtensionCount(); i++) {
+		for (final Extension ext : extensionList) {
 			try {
-				final Extension ext = getExtension(i);
 				logger.info("Initializing " + ext.getDescription());
 				final ExtensionHook extHook = new ExtensionHook(model, view);
 				ext.hook(extHook);
@@ -529,9 +515,9 @@ public class ExtensionLoader {
 			}
 		}
 		// Call postInit for all extensions after they have all been initialized
-		for (int i = 0; i < getExtensionCount(); i++) {
+		for (Extension ext : extensionList) {
 			try {
-				getExtension(i).postInit();
+				ext.postInit();
 			} catch (Throwable e) {
 				// Catch Errors thrown by out of date extensions as well as Exceptions
 				logger.error(e.getMessage(), e);
@@ -622,16 +608,11 @@ public class ExtensionLoader {
 
 		mh.addMenuHelper(view.getPopupList(), hookMenu.getPopupMenus());
 	}
-
-
-
 	private void hookOptions(ExtensionHook hook) {
 		List<AbstractParam> list = hook.getOptionsParamSetList();
-
 		for (AbstractParam paramSet : list) {
 			try {
 				model.getOptionsParam().addParamSet(paramSet);
-
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
@@ -640,11 +621,9 @@ public class ExtensionLoader {
 
 	private void unloadOptions(ExtensionHook hook) {
 		List<AbstractParam> list = hook.getOptionsParamSetList();
-
 		for (AbstractParam paramSet : list) {
 			try {
 				model.getOptionsParam().removeParamSet(paramSet);
-
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
@@ -735,10 +714,10 @@ public class ExtensionLoader {
 	 * Init all extensions
 	 */
 	private void initAllExtension(double progressFactor) {
-		initExtension(i -> {
+		initExtension(ext -> {
 			try {
-				getExtension(i).init();
-				getExtension(i).databaseOpen(Model.getSingleton().getDb());
+				ext.init();
+				ext.databaseOpen(Model.getSingleton().getDb());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -750,8 +729,7 @@ public class ExtensionLoader {
 	 * @param model the model to apply to all extensions
 	 */
 	private void initModelAllExtension(Model model, double progressFactor) {
-
-		initExtension(i -> getExtension(i).initModel(model), progressFactor);
+		initExtension(ext -> ext.initModel(model), progressFactor);
 	}
 
 	/**
@@ -764,15 +742,13 @@ public class ExtensionLoader {
 		}
 
 		final double factorPerc = progressFactor / getExtensionCount();
-
-		for (int i = 0; i < getExtensionCount(); i++) {
+		for (final Extension ext : extensionList) {
 			try {
-				final Extension extension = getExtension(i);
 				EventQueue.invokeAndWait(new Runnable() {
 
 					@Override
 					public void run() {
-						extension.initView(view);
+						ext.initView(view);
 						view.addSplashScreenLoadingCompletion(factorPerc);
 					}
 				});
@@ -784,19 +760,18 @@ public class ExtensionLoader {
 	}
 
 	private void initXMLAllExtension(Session session, OptionsParam options, double progressFactor) {
-		initExtension(i -> getExtension(i).initXML(session, options), progressFactor);
+		initExtension(ext -> ext.initXML(session, options), progressFactor);
 	}
 
-	private void initExtension(Consumer<Integer> actionToExecute, double progressFactor) {
+	private void initExtension(Consumer<Extension> extensionAction, double progressFactor) {
 		double factorPerc = progressFactor / getExtensionCount();
 
-		for (int i = 0; i < getExtensionCount(); i++) {
+		for (Extension ext : extensionList) {
 			try {
-				actionToExecute.accept(i);
+				extensionAction.accept(ext);
 				if (view != null) {
 					view.addSplashScreenLoadingCompletion(factorPerc);
 				}
-
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
