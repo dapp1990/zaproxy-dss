@@ -82,7 +82,6 @@ import org.parosproxy.paros.CommandLine;
 import org.parosproxy.paros.common.AbstractParam;
 import org.parosproxy.paros.control.Control;
 import org.parosproxy.paros.control.Control.Mode;
-import org.parosproxy.paros.control.Proxy;
 import org.parosproxy.paros.core.scanner.Scanner;
 import org.parosproxy.paros.core.scanner.ScannerHook;
 import org.parosproxy.paros.db.Database;
@@ -106,8 +105,9 @@ import org.zaproxy.zap.view.ContextPanelFactory;
 
 public class ExtensionLoader {
 
-	private final List<Extension> extensionList = new ArrayList<>();
-	private final Map<Class<? extends Extension>, Extension> extensionsMap = new HashMap<>();
+	//	private final List<Extension> extensionList = new ArrayList<>();
+	//	private final Map<Class<? extends Extension>, Extension> extensionsMap = new HashMap<>();
+	private final ExtensionList extensionList = new ExtensionList();
 	private final Map<Extension, ExtensionHook> extensionHooks = new HashMap<>();
 	private Model model = null;
 	private HookProxyLinkerManager hookProxyLinkerManager;
@@ -127,63 +127,16 @@ public class ExtensionLoader {
 
 	public void addExtension(Extension extension) {
 		extensionList.add(extension);
-		extensionsMap.put(extension.getClass(), extension);
-	}
-
-	public void destroyAllExtension() {
-		for (int i = 0; i < getExtensionCount(); i++) {
-			try {
-				getExtension(i).destroy();
-
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
-
-	}
-
-	public Extension getExtension(int i) {
-		return extensionList.get(i);
+		extensionList.put(extension.getClass(), extension);
 	}
 
 	public Extension getExtension(String name) {
-		if (name != null) {
-			return findExtension(ext -> ext.getName().equalsIgnoreCase(name));
-		}
-		return null;
+		return extensionList.getExtension(name);
 	}
 
-	public Extension getExtensionByClassName(String name) {
-		if (name != null) {
-			return findExtension(ext -> ext.getClass().getName().equals(name));
-		}
-		return null;
-	}
-	
-	private Extension findExtension(Function<Extension, Boolean> checker) {
-			for (Extension ext : extensionList) {
-				if (checker.apply(ext)) {
-					return ext;
-				}
-			}
-		return null;
-	}
-
-	/**
-	 * Gets the {@code Extension} with the given class.
-	 *
-	 * @param clazz the class of the {@code Extension}
-	 * @return the {@code Extension} or {@code null} if not found.
-	 */
-	public <T extends Extension> T getExtension(Class<T> clazz) {
-		if (clazz != null) {
-			Extension extension = extensionsMap.get(clazz);
-			if (extension != null) {
-				return clazz.cast(extension);
-			}
-		}
-		return null;
-	}
+	//	public Extension getExtensionByClassName(String name) {
+	//		return extensionList.getExtensionByClassName(name);
+	//	}
 
 	/**
 	 * Tells whether or not an {@code Extension} with the given
@@ -210,10 +163,6 @@ public class ExtensionLoader {
 		return extension.isEnabled();
 	}
 
-	public int getExtensionCount() {
-		return extensionList.size();
-	}
-
 	/**
 	 * Hooks (adds) the {@code ConnectRequestProxyListener}s of the loaded extensions to the given {@code proxy}.
 	 * <p>
@@ -235,7 +184,7 @@ public class ExtensionLoader {
 
 			for (ScannerHook scannerHook : scannerHookList) {
 				try {
-						scan.addScannerHook(scannerHook);
+					scan.addScannerHook(scannerHook);
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				}
@@ -334,22 +283,6 @@ public class ExtensionLoader {
 		notifyEvent(executer, hook -> hook.getAddOnInstallationStatusListeners());
 	}
 
-	public void startAllExtension(double progressFactor) {
-		double factorPerc = progressFactor / getExtensionCount();
-
-		for (Extension ext : extensionList) {
-			try {
-				ext.start();
-				if (view != null) {
-					view.addSplashScreenLoadingCompletion(factorPerc);
-				}
-
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
-	}
-
 	/**
 	 * Initialize and start all Extensions
 	 * This function loops for all getExtensionCount() exts
@@ -360,14 +293,15 @@ public class ExtensionLoader {
 		// Percentages are passed into the calls as doubles
 		if (view != null) {
 			view.setSplashScreenLoadingCompletion(0.0);
+			extensionList.setSplashScreenMethod(p -> view.addSplashScreenLoadingCompletion(p));
 		}
-
+		
 		// Step 3: initialize all (slow)
 		initAllExtension(5.0);
 		// Step 4: initialize models (quick)
 		initModelAllExtension(0.0);
 		// Step 5: initialize xmls (quick)
-		initXMLAllExtension(0.0);
+		initXMLAllExtension(model.getSession(), model.getOptionsParam(), 0.0);
 		// Step 6: initialize viewes (slow)
 		initViewAllExtension(view, 10.0);
 		// Step 7: initialize hooks (slowest)
@@ -425,7 +359,7 @@ public class ExtensionLoader {
 	}
 
 	public void runCommandLine() {
-		for (Extension ext : extensionList) {
+		for (Extension ext : extensionList.getExtensions()) {
 			if (ext instanceof CommandLineListener) {
 				CommandLineListener listener = (CommandLineListener) ext;
 				listener.execute(extensionHooks.get(ext).getCommandLineArgument());
@@ -433,31 +367,12 @@ public class ExtensionLoader {
 		}
 	}
 
-	// This method refuses to work with a Consumer closure/lambda. Even when adding try/catch here.
-	// This is probably a minor bug in Java 8.
 	public void databaseOpen(Database db) {
-		for (Extension ext : extensionList) {
-			try {
-				ext.databaseOpen(db);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
-		// executeForAllExtensions(ext -> ext.databaseOpen(db));
+		extensionList.databaseOpen(db);
 	}
 
 	public void stopAllExtension() {
-		executeForAllExtensions(ext -> ext.stop());
-	}
-	
-	private void executeForAllExtensions(Consumer<Extension> action) {
-		for (Extension ext : extensionList) {
-			try {
-				action.accept(ext);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
+		extensionList.stopAllExtension();
 	}
 
 	// ZAP: Added the type argument.
@@ -486,9 +401,10 @@ public class ExtensionLoader {
 	}
 
 	private void hookAllExtension(double progressFactor) {
-		final double factorPerc = progressFactor / getExtensionCount();
+		final double factorPerc = progressFactor / extensionList.getExtensionCount();
+		List<Extension> extensions = extensionList.getExtensions();
 
-		for (final Extension ext : extensionList) {
+		for (final Extension ext : extensions) {
 			try {
 				logger.info("Initializing " + ext.getDescription());
 				final ExtensionHook extHook = new ExtensionHook(model, view);
@@ -520,7 +436,7 @@ public class ExtensionLoader {
 			}
 		}
 		// Call postInit for all extensions after they have all been initialized
-		for (Extension ext : extensionList) {
+		for (Extension ext : extensions) {
 			try {
 				ext.postInit();
 			} catch (Throwable e) {
@@ -719,7 +635,7 @@ public class ExtensionLoader {
 	 * Init all extensions
 	 */
 	private void initAllExtension(double progressFactor) {
-		initExtension(ext -> {
+		extensionList.initExtensions(ext -> {
 			try {
 				ext.init();
 				ext.databaseOpen(Model.getSingleton().getDb());
@@ -729,12 +645,16 @@ public class ExtensionLoader {
 		},  progressFactor);
 	}
 
+	public void initXMLAllExtension(Session session, OptionsParam params, double progressFactor) {
+		extensionList.initExtensions(ext -> ext.initXML(session, params), progressFactor);
+	}
+	
 	/**
 	 * Init all extensions with the same Model
 	 * @param model the model to apply to all extensions
 	 */
 	private void initModelAllExtension(double progressFactor) {
-		initExtension(ext -> ext.initModel(model), progressFactor);
+		extensionList.initExtensions(ext -> ext.initModel(model), progressFactor);
 	}
 
 	/**
@@ -747,7 +667,7 @@ public class ExtensionLoader {
 		}
 
 		final double factorPerc = progressFactor / getExtensionCount();
-		for (final Extension ext : extensionList) {
+		for (final Extension ext : extensionList.getExtensions()) {
 			try {
 				EventQueue.invokeAndWait(new Runnable() {
 
@@ -764,23 +684,8 @@ public class ExtensionLoader {
 		}
 	}
 
-	private void initXMLAllExtension(double progressFactor) {
-		initExtension(ext -> ext.initXML(model.getSession(), model.getOptionsParam()), progressFactor);
-	}
-
-	private void initExtension(Consumer<Extension> extensionAction, double progressFactor) {
-		double factorPerc = progressFactor / getExtensionCount();
-
-		for (Extension ext : extensionList) {
-			try {
-				extensionAction.accept(ext);
-				if (view != null) {
-					view.addSplashScreenLoadingCompletion(factorPerc);
-				}
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
+	public void startAllExtension(double progressFactor) {
+		extensionList.initExtensions(ext -> ext.start(), progressFactor);
 	}
 
 	/**
@@ -792,7 +697,6 @@ public class ExtensionLoader {
 	 */
 	public void removeExtension(Extension extension, ExtensionHook hook) {
 		extensionList.remove(extension);
-		extensionsMap.remove(extension.getClass());
 
 		if (hook == null) {
 			logger.info("ExtensionHook is null for \"" + extension.getClass().getCanonicalName()
@@ -849,36 +753,19 @@ public class ExtensionLoader {
 		}
 	}
 
-	/**
-	 * Gets the names of all unsaved resources of all the extensions.
-	 *
-	 * @return a {@code List} containing all the unsaved resources of all add-ons, never {@code null}
-	 * @see Extension#getActiveActions()
-	 */
-	public List<String> getUnsavedResources() {
-		return getExtensionProperties(ext -> ext.getUnsavedResources());
+	public int getExtensionCount() {
+		return extensionList.getExtensionCount();
 	}
 
-	/**
-	 * Gets the names of all active actions of all the extensions.
-	 *
-	 * @return a {@code List} containing all the active actions of all add-ons, never {@code null}
-	 * @since 2.4.0
-	 * @see Extension#getActiveActions()
-	 */
-	public List<String> getActiveActions() {
-		return getExtensionProperties(ext -> ext.getActiveActions());
+	public Extension getExtension(int i) {
+		return extensionList.get(i);
 	}
-	
-	private List<String> getExtensionProperties(Function<Extension, List<String>> propertiesGetter) {
-		List<String> list = new ArrayList<>();
-		List<String> l;
-		for (Extension ext : extensionList) {
-			l = propertiesGetter.apply(ext);
-			if (l != null) {
-				list.addAll(l);
-			}
-		}
-		return list;
+
+	public <T extends Extension> T getExtension(Class<T> clazz) {
+		return extensionList.getExtension(clazz);
+	}
+
+	public void destroyAllExtensions() {
+		extensionList.destroyAllExtensions();
 	}
 }
