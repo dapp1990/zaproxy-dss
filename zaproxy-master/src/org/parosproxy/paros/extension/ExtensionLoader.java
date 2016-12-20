@@ -243,25 +243,6 @@ public class ExtensionLoader {
 		}
 	}
 
-	public void runCommandLine() {
-		for (Extension ext : extensionList) {
-			if (ext instanceof CommandLineListener) {
-				CommandLineListener listener = (CommandLineListener) ext;
-				listener.execute(extensionHooks.get(ext).getCommandLineArgument());
-			}
-		}
-	}
-
-	public void databaseOpen(Database db) {
-		for (Extension ext : extensionList) {
-			try {
-				ext.databaseOpen(db);
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
-	}
-
 	public void sessionAboutToChangeAllPlugin(Session session) {
 		logger.debug("sessionAboutToChangeAllPlugin");
 		notifySessionEvent(listener -> listener.sessionAboutToChange(session));
@@ -443,15 +424,40 @@ public class ExtensionLoader {
 		}
 	}
 
-	public void stopAllExtension() {
+	public void runCommandLine() {
+		for (Extension ext : extensionList) {
+			if (ext instanceof CommandLineListener) {
+				CommandLineListener listener = (CommandLineListener) ext;
+				listener.execute(extensionHooks.get(ext).getCommandLineArgument());
+			}
+		}
+	}
+
+	// This method refuses to work with a Consumer closure/lambda. Even when adding try/catch here.
+	// This is probably a minor bug in Java 8.
+	public void databaseOpen(Database db) {
 		for (Extension ext : extensionList) {
 			try {
-				ext.stop();
+				ext.databaseOpen(db);
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
 		}
+		// executeForAllExtensions(ext -> ext.databaseOpen(db));
+	}
 
+	public void stopAllExtension() {
+		executeForAllExtensions(ext -> ext.stop());
+	}
+	
+	private void executeForAllExtensions(Consumer<Extension> action) {
+		for (Extension ext : extensionList) {
+			try {
+				action.accept(ext);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
 	}
 
 	// ZAP: Added the type argument.
@@ -465,7 +471,6 @@ public class ExtensionLoader {
 				logger.error(e.getMessage(), e);
 			}
 		}
-
 	}
 
 	private void removeParamPanel(List<AbstractParamPanel> panelList, AbstractParamDialog dialog) {
@@ -851,17 +856,7 @@ public class ExtensionLoader {
 	 * @see Extension#getActiveActions()
 	 */
 	public List<String> getUnsavedResources() {
-		List<String> list = new ArrayList<>();
-		List<String> l;
-
-		for (int i = 0; i < getExtensionCount(); i++) {
-			l = getExtension(i).getUnsavedResources();
-			if (l != null) {
-				list.addAll(l);
-			}
-		}
-
-		return list;
+		return getExtensionProperties(ext -> ext.getUnsavedResources());
 	}
 
 	/**
@@ -872,17 +867,18 @@ public class ExtensionLoader {
 	 * @see Extension#getActiveActions()
 	 */
 	public List<String> getActiveActions() {
+		return getExtensionProperties(ext -> ext.getActiveActions());
+	}
+	
+	private List<String> getExtensionProperties(Function<Extension, List<String>> propertiesGetter) {
 		List<String> list = new ArrayList<>();
 		List<String> l;
-
-		for (int i = 0; i < getExtensionCount(); i++) {
-			l = getExtension(i).getActiveActions();
+		for (Extension ext : extensionList) {
+			l = propertiesGetter.apply(ext);
 			if (l != null) {
 				list.addAll(l);
 			}
 		}
-
 		return list;
 	}
-
 }
